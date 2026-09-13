@@ -1,0 +1,285 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タスク登録 XML の雛形化 — 計画</title>
+<style>
+	:root{
+		--navy1:#12224d; --navy2:#2f5fbf;
+		--ink:#1c2330; --ink-soft:#4a5568; --line:#d9dfe8; --code-bg:#f4f6fa;
+		--link:#1a4fa0;
+		--accent:#12224d; --accent2:#2f5fbf; --soft:#f2f5fb;
+	}
+	.ch01{--accent:hsl(280,78%,25%);--accent2:hsl(280,58%,55%);--soft:hsl(280,28%,95%);}
+	.ch02{--accent:hsl(210,78%,25%);--accent2:hsl(210,58%,55%);--soft:hsl(210,28%,95%);}
+	.ch03{--accent:hsl(140,78%,25%);--accent2:hsl(140,58%,55%);--soft:hsl(140,28%,95%);}
+	.ch04{--accent:hsl(70,78%,25%);--accent2:hsl(70,58%,55%);--soft:hsl(70,28%,95%);}
+	.ch05{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
+
+	*{box-sizing:border-box;}
+	body{margin:0;background:#fff;color:#1c2330;
+		font-family:"Yu Gothic UI","Meiryo","Segoe UI",system-ui,sans-serif;
+		font-size:15.5px;line-height:1.85;}
+
+	.titlebar{background:linear-gradient(135deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));color:#fff;padding:34px 30px 30px;}
+	.titlebar .inner{max-width:1600px;margin:0 auto;}
+	.titlebar h1{font-size:1.9em;margin:0 0 8px;color:#fff;}
+	.titlebar .lead{font-size:.92em;color:#dde6f7;background:transparent;}
+	.titlebar .date{font-size:.88em;color:#c9d8f2;background:transparent;margin-top:6px;}
+
+	.wrap{max-width:1600px;margin:0 auto;padding:0 30px;}
+
+	a{color:var(--link,#1a4fa0);background:transparent;}
+
+	.toc{margin:26px 0 0;}
+	.toc ol{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:12px 0 0;counter-reset:tocn;}
+	.toc li{counter-increment:tocn;}
+	.toc a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+		text-overflow:ellipsis;white-space:normal;width:310px;max-width:100%;
+		background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:700;font-size:.92em;}
+	.toc a::before{content:counter(tocn) ". ";font-weight:700;}
+
+	section{background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border:1px solid var(--line,#d9dfe8);border-radius:10px;padding:4px 26px 26px;margin:34px 0;}
+	section h1{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:14px 20px;margin:26px 0 20px;border-radius:8px;
+		box-shadow:0 3px 10px rgba(18,34,77,.22);font-size:1.4em;}
+	h2{background:linear-gradient(90deg,var(--soft,#f2f5fb),#fff);color:var(--accent,#12224d);
+		border-left:6px solid var(--accent,#12224d);padding:6px 12px;margin:30px 0 12px;
+		font-size:1.12em;border-radius:0 6px 6px 0;}
+	h3{display:inline-block;color:var(--accent,#12224d);background:transparent;
+		border-bottom:2px dotted var(--accent2,#2f5fbf);padding-bottom:3px;margin:20px 0 8px;font-size:1em;}
+	p{background:transparent;color:var(--ink,#1c2330);}
+
+	.tablewrap{overflow-x:auto;margin:12px 0;}
+	table{border-collapse:collapse;width:100%;background:#fff;color:var(--ink,#1c2330);
+		border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(18,34,77,.10);font-size:.92em;
+		line-height:1.5;}
+	th{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:6px 11px;text-align:left;white-space:nowrap;font-weight:700;}
+	td{padding:6px 11px;border-bottom:1px solid var(--line,#d9dfe8);vertical-align:top;
+		background:transparent;color:var(--ink,#1c2330);}
+	tr:nth-child(even) td{background:#fafbfe;color:var(--ink,#1c2330);}
+	td.num{text-align:right;white-space:nowrap;}
+	td.nowrap{white-space:nowrap;}
+
+	.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.82em;font-weight:700;
+		white-space:nowrap;color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+	.b-ok{color:#fff;background:linear-gradient(100deg,#1d7a3c,#45b56c);}
+	.b-ng{color:#fff;background:linear-gradient(100deg,#a51f22,#e05a5c);}
+	.b-warn{color:#fff;background:linear-gradient(100deg,#b8620a,#f0a548);}
+	.b-none{color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+
+	.callout{border-left:6px solid var(--accent,#12224d);
+		background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+	.callout strong{color:var(--accent,#12224d);background:transparent;}
+
+	code{background:var(--code-bg,#f4f6fa);border:1px solid var(--line,#d9dfe8);color:#17335f;
+		padding:1px 5px;border-radius:4px;font-size:.92em;
+		font-family:Consolas,"Courier New",monospace;}
+	pre{background:#fff;color:var(--ink,#1c2330);border:1px solid var(--line,#d9dfe8);
+		border-left:5px solid var(--accent2,#2f5fbf);border-radius:0 8px 8px 0;
+		padding:13px 16px;overflow-x:auto;font-size:.9em;line-height:1.6;
+		font-family:Consolas,"Courier New",monospace;}
+	pre code{background:transparent;border:none;color:var(--ink,#1c2330);padding:0;}
+
+	ul,ol{background:transparent;color:var(--ink,#1c2330);}
+
+	footer{max-width:1600px;margin:40px auto 0;padding:18px 30px 0;
+		border-top:1px solid var(--line,#d9dfe8);color:var(--ink-soft,#4a5568);
+		background:#fff;font-size:.88em;}
+</style>
+</head>
+<body>
+
+<div class="titlebar"><div class="inner">
+<h1>タスク登録 XML の雛形化 — 計画</h1>
+<div class="lead">実値のコピーを Git 管理外へ置き、リポジトリ側は雛形と登録スクリプトにする</div>
+<div class="date">📅 作成: 2026-09-08 / 更新: 2026-09-08</div>
+</div></div>
+
+<div class="wrap">
+
+<nav class="toc">
+<ol>
+<li class="ch01"><a href="#ch01">この計画について</a></li>
+<li class="ch02"><a href="#ch02">いまの状態</a></li>
+<li class="ch03"><a href="#ch03">作るもの</a></li>
+<li class="ch04"><a href="#ch04">手順</a></li>
+<li class="ch05"><a href="#ch05">決めておくこととリスク</a></li>
+</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>この計画について</h1>
+
+<h2>目的</h2>
+<p>タスクスケジューラの登録定義から、ローカル PC 固有の値を外す。<strong>リポジトリに入るものからは実値を消し、登録をやり直す手段は残す。</strong></p>
+
+<h2>きっかけ</h2>
+<p>個人情報の点検で、この 1 ファイルだけが残っていた。<code>logs/</code> の生成物（20 ファイル）は課題 <code>i260908-01</code> ・ <code>i260908-02</code> で片付いたが、<strong>登録定義は点検の対象に入っていなかった。</strong></p>
+
+<div class="callout callout-important">
+<strong>UTF-16 のファイルは Grep から漏れる。</strong>0 件ではなく一部だけが返るため、結果を見ても欠けに気づけない。この 1 件は <code>text find</code> で探して初めて見つかった。<strong>点検の道具を変えなければ、いつまでも見つからなかった。</strong></div>
+
+<h2>この計画でやらないこと</h2>
+<ul>
+<li><strong>タスクの再登録</strong>。既に登録済みで動いているものは触らない。XML は記録と再現の手段として扱う</li>
+<li><strong>タスクの内容の変更</strong>。実行時刻（6 時間ごと）・引数（<code>nopause noai</code>）・実行条件は変えない。<code>noai</code> を外す件は別に扱う</li>
+<li><strong>セッションログの扱い</strong>。<code>etc/</code> のログ（JSONL）はフックが自動コピーしたもので、共通ルールで Git 管理外。今回の対象外</li>
+<li><strong>ほかの登録定義の作成</strong>。ログ圧縮のタスク（<code>archive-old-logs</code>）は <a href="p260905-01-プロセスメモリ調査ツール.html">p260905-01</a> の段取りに残す</li>
+</ul>
+</section>
+
+<section class="ch02" id="ch02">
+<h1>いまの状態</h1>
+
+<h2>対象のファイル</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>値</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">パス</td><td class="nowrap"><code>tools/80_ops/ai-pc-inspect-process-memory.xml</code></td></tr>
+<tr><td class="nowrap">文字コード / 改行</td><td class="nowrap">UTF-16LE ＋ CRLF</td></tr>
+<tr><td class="nowrap">大きさ</td><td class="num nowrap">4,052 バイト</td></tr>
+<tr><td class="nowrap">含まれる固有の値</td><td>ユーザー名 ／ コンピューター名 ／ 実体パス ／ ユーザー SID</td></tr>
+</tbody>
+</table></div>
+
+<h2>点検の結果</h2>
+<p><code>text find</code> で全フォルダを数えた。一致したファイル数を示す。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>場所</th><th>ユーザー名</th><th>コンピューター名</th><th>実体パス</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>logs/</code>（20 ファイル）</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="nowrap"><span class="badge b-ok">問題なし</span></td></tr>
+<tr><td class="nowrap"><code>notes/</code></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="nowrap"><span class="badge b-ok">問題なし</span></td></tr>
+<tr><td class="nowrap"><code>tests/</code></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="nowrap"><span class="badge b-ok">問題なし</span></td></tr>
+<tr><td class="nowrap"><code>.claude/</code></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="nowrap"><span class="badge b-ok">問題なし</span></td></tr>
+<tr><td class="nowrap"><code>tools/</code>（登録定義）</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="nowrap"><span class="badge b-ng">この計画の対象</span></td></tr>
+<tr><td class="nowrap"><code>etc/</code>（セッションログ）</td><td class="num">3</td><td class="num">1</td><td class="num">0</td><td class="nowrap"><span class="badge b-none">対象外・Git 管理外</span></td></tr>
+</tbody>
+</table></div>
+
+<h2>いま一致している <code>C:\Users\</code> は伏せた形</h2>
+<p>3 ファイルに <code>C:\Users\</code> の文字列があるが、いずれも実名を伴わない。</p>
+<ul>
+<li><code>tools/80_ops/inspect-process-memory.ps1</code> — 伏せ字の置換先の文字列</li>
+<li><code>notes/10_plan/p260905-01-…</code> — 伏せた形の例</li>
+<li><code>tests/test-hide-private.ps1</code> — 合成値（<code>user1</code>）</li>
+</ul>
+</section>
+
+<section class="ch03" id="ch03">
+<h1>作るもの</h1>
+
+<p>2 つを両立させる。<strong>実値のコピーは Git 管理外へ置き、リポジトリ側は他の人が再現できる雛形にする。</strong></p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>置き場</th><th>役目</th><th>文字コード / 改行</th><th>Git</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td class="nowrap"><code>etc/ai-pc-inspect-process-memory.xml</code></td><td>いまのファイルをそのままコピー。<strong>登録をやり直したいときに <code>schtasks</code> へそのまま渡せる</strong></td><td class="nowrap">UTF-16LE ＋ BOM ＋ CRLF（現状のまま）</td><td class="nowrap">除外</td></tr>
+<tr><td class="num">2</td><td class="nowrap"><code>tools/80_ops/ai-pc-inspect-process-memory.xml</code></td><td>雛形。固有の値をプレースホルダにする。<strong><code>schtasks</code> へ直接は渡さない</strong></td><td class="nowrap">UTF-8 ＋ LF</td><td class="nowrap">管理</td></tr>
+<tr><td class="num">3</td><td class="nowrap"><code>tools/80_ops/fill-task-xml-template.ps1</code>（＋同名の cmd）</td><td>雛形を実値で埋める。<strong>今回は雛形の検証用で、実際の登録はしない</strong></td><td class="nowrap">BOM 付き UTF-8 ＋ CRLF</td><td class="nowrap">管理</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout callout-important">
+<strong>実装時に名前の衝突が見つかった。</strong><code>tools/80_ops/register-inspect-task.ps1</code> は既に存在し（2026-09-06 作成）、<code>Register-ScheduledTask</code> コマンドレットで直接登録する別の仕組みだった。<code>ai-pc-inspect-process-memory.xml</code> を読み書きするスクリプトは他に無く、この XML は登録済みタスクの控え（スナップショット）として単体で存在していたと分かった。<strong>既存の登録スクリプトは変更せず、新しいスクリプトは別名にする</strong>ことをユーザーに確認して決めた。登録手段は当面 2 つ並存する（既存はコマンドレット方式、今回追加分は XML の雛形を埋めるところまでで登録は行わない）。</div>
+
+<h2>置き換えるプレースホルダ</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>プレースホルダ</th><th>元の箇所</th><th>登録時に埋める値の取り方</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>{USER_SID}</code></td><td class="nowrap"><code>&lt;UserId&gt;</code></td><td><code>whoami /user</code> の出力から取る</td></tr>
+<tr><td class="nowrap"><code>{PROJECT_ROOT}</code></td><td class="nowrap"><code>&lt;Command&gt;</code></td><td>subst の割り当てを実体パスの側から引き当てる（<code>Find-SubstRoot</code> と同じ考え方）</td></tr>
+<tr><td class="nowrap"><code>{USER_ACCOUNT}</code></td><td class="nowrap"><code>&lt;Author&gt;</code></td><td><code>$env:USERDOMAIN</code> ＋ <code>$env:USERNAME</code></td></tr>
+<tr><td class="nowrap"><code>{HOSTNAME}</code></td><td class="nowrap"><code>&lt;URI&gt;</code> 等にホスト名が入っていれば</td><td><code>$env:COMPUTERNAME</code></td></tr>
+</tbody>
+</table></div>
+
+<div class="callout">
+<strong>雛形は UTF-8 でよい。</strong><code>schtasks</code> が読むのは登録スクリプトが <code>tmp/</code> に生成したほうで、雛形そのものは渡さない。<code>.editorconfig</code> の既定（<code>charset = utf-8</code>）に合わせられる。</div>
+
+<h2>登録スクリプトの動き</h2>
+<ol>
+<li>雛形を読み、プレースホルダを実値で埋める</li>
+<li><strong>埋め残しが無いことを確かめる</strong>（<code>{</code> で始まる語が残っていたら止める）</li>
+<li><code>tmp/</code> に書き、<code>convert-encoding --to reg</code> で UTF-16LE ＋ BOM ＋ CRLF にする</li>
+<li><code>schtasks /create /xml</code> で登録する</li>
+<li><strong><code>tmp/</code> の一時ファイルを消す</strong>（実値を含むため、残すかどうかは判断しない）</li>
+</ol>
+</section>
+
+<section class="ch04" id="ch04">
+<h1>手順</h1>
+
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>確かめること</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td><code>etc/</code> へコピーする（実値のまま・文字コードを変えない）</td><td>大きさとハッシュが元と一致する</td></tr>
+<tr><td class="num">2</td><td><code>tools/</code> 側を <code>convert-encoding --to utf8</code> で UTF-8 にする</td><td>中身が読める（<code>text read</code>）</td></tr>
+<tr><td class="num">3</td><td>Edit でプレースホルダに置き換える</td><td><code>text find</code> で固有の値が 0 件</td></tr>
+<tr><td class="num">4</td><td><code>convert-encoding --to utf8/lf</code> で改行を揃える</td><td>UTF-8 ＋ LF</td></tr>
+<tr><td class="num">5</td><td>登録スクリプトと cmd ランチャーを作る</td><td>構文エラーなし（<code>Parser::ParseFile</code>）</td></tr>
+<tr><td class="num">6</td><td>雛形を埋めた結果を <code>etc/</code> のコピーと比べる</td><td><strong>プレースホルダ以外が一致する</strong></td></tr>
+<tr><td class="num">7</td><td>テストを全件実行する</td><td>失敗 0 件</td></tr>
+</tbody>
+</table></div>
+
+<h2>順序の理由</h2>
+<p><strong>先に <code>etc/</code> へコピーしてから <code>tools/</code> 側を書き換える。</strong>途中で中断しても実値が失われないようにするため（共通ルール「ファイルの移動・分割・置き換え時の順序」）。</p>
+
+<h2>登録の確認は別に行う</h2>
+<p><strong>手順 6 は「埋めた結果が一致するか」までで、実際の登録は行わない。</strong>タスクは既に動いているため、登録をやり直す必要が出たときに、そのとき指示を受けて実行する。</p>
+
+<div class="callout">
+<strong>実施済み。</strong>7 手順すべて完了した。手順 6 の比較は<strong>差分 0 行</strong>（雛形を埋めた結果が <code>etc/</code> のコピーと一致）、手順 7 のテストは<strong>全件成功（16 件）</strong>。<code>etc/</code> を除く全フォルダで固有の値が 0 件であることも確認した。実装中に見つかった計画との差分（登録スクリプトの名前衝突・プレースホルダの追加）は課題 <a href="../40_issues/issues.html">i260908-03</a> に記録した。</div>
+</section>
+
+<section class="ch05" id="ch05">
+<h1>決めておくこととリスク</h1>
+
+<h2>決めたこと</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>決め</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">SID かアカウント名か</td><td>XML に <code>{USER_SID}</code> を置き、登録時に埋める</td><td><code>LogonType S4U</code> を XML で指定する形を保つため。<code>/RU</code> で渡す形にすると XML の指定と二重になる</td></tr>
+<tr><td class="nowrap">既存タスクの扱い</td><td>触らない</td><td>動いているものを止める理由がない。<code>/F</code> での上書きは指示があったときだけ</td></tr>
+<tr><td class="nowrap">雛形の文字コード</td><td>UTF-8 ＋ LF</td><td><code>schtasks</code> へ直接渡さないため。<code>.editorconfig</code> の既定に合う</td></tr>
+<tr><td class="nowrap"><code>etc/</code> のコピー</td><td>文字コードを変えない</td><td>そのまま <code>schtasks</code> へ渡せる状態を保つため</td></tr>
+</tbody>
+</table></div>
+
+<h2>リスク</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>リスク</th><th>起きること</th><th>備え</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">UTF-16 を Edit で直す</td><td><strong>エラーが出ず、成功が返り、中身が壊れる</strong></td><td>先に UTF-8 化する（手順 2）。<code>etc/</code> のコピーが残っているので戻せる</td></tr>
+<tr><td class="nowrap">プレースホルダの埋め残し</td><td>登録が失敗するか、間違った値で登録される</td><td>登録スクリプトで <code>{</code> の残りを検出して止める</td></tr>
+<tr><td class="nowrap"><code>tmp/</code> の消し忘れ</td><td>実値を含む一時ファイルが残る</td><td>登録の直後に消す。<code>Remove-Item</code> は単独のコマンドで実行する</td></tr>
+<tr><td class="nowrap">点検の漏れ</td><td>また別の文字コードのファイルが残る</td><td><strong>点検は <code>text find</code> で行う。</strong>Grep で数えない</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout callout-caution">
+<strong>この計画を実施しても、<code>etc/</code> には実値が残る。</strong>共通ルールで <code>etc/</code> は Git 管理外だが、<strong>フォルダごと誰かに渡せば実値も渡る。</strong><code>etc/</code> を配布物に含めない運用が前提になる。</div>
+
+<h2>完了の条件</h2>
+<ul>
+<li><code>text find</code> で、<code>etc/</code> を除く全フォルダの固有の値が <strong>0 件</strong></li>
+<li>雛形を埋めた結果が <code>etc/</code> のコピーと一致する（プレースホルダ以外）</li>
+<li>テストが全件通る</li>
+<li>課題（<code>notes/40_issues/issues.html</code>）に記録する</li>
+</ul>
+</section>
+
+</div>
+
+<footer>
+プロセスメモリ調査 ／ 計画: タスク登録 XML の雛形化
+</footer>
+
+</body>
+</html>

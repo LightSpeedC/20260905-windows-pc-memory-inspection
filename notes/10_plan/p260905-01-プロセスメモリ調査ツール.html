@@ -1,0 +1,1008 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プロセスメモリ調査ツール — 計画と出力構成</title>
+<style>
+	:root{
+		--navy1:#12224d; --navy2:#2f5fbf;
+		--ink:#1c2330; --ink-soft:#4a5568; --line:#d9dfe8; --code-bg:#f4f6fa;
+		--link:#1a4fa0;
+		--accent:#12224d; --accent2:#2f5fbf; --soft:#f2f5fb;
+	}
+	.ch01{--accent:hsl(280,78%,25%);--accent2:hsl(280,58%,55%);--soft:hsl(280,28%,95%);}
+	.ch02{--accent:hsl(252,78%,25%);--accent2:hsl(252,58%,55%);--soft:hsl(252,28%,95%);}
+	.ch03{--accent:hsl(224,78%,25%);--accent2:hsl(224,58%,55%);--soft:hsl(224,28%,95%);}
+	.ch04{--accent:hsl(196,78%,25%);--accent2:hsl(196,58%,55%);--soft:hsl(196,28%,95%);}
+	.ch05{--accent:hsl(168,78%,25%);--accent2:hsl(168,58%,55%);--soft:hsl(168,28%,95%);}
+	.ch06{--accent:hsl(140,78%,25%);--accent2:hsl(140,58%,55%);--soft:hsl(140,28%,95%);}
+	.ch07{--accent:hsl(112,78%,25%);--accent2:hsl(112,58%,55%);--soft:hsl(112,28%,95%);}
+	.ch08{--accent:hsl(84,78%,25%);--accent2:hsl(84,58%,55%);--soft:hsl(84,28%,95%);}
+	.ch09{--accent:hsl(56,78%,25%);--accent2:hsl(56,58%,55%);--soft:hsl(56,28%,95%);}
+	.ch10{--accent:hsl(28,78%,25%);--accent2:hsl(28,58%,55%);--soft:hsl(28,28%,95%);}
+	.ch11{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
+
+	*{box-sizing:border-box;}
+	body{margin:0;background:#fff;color:#1c2330;
+		font-family:"Yu Gothic UI","Meiryo","Segoe UI",system-ui,sans-serif;
+		font-size:15.5px;line-height:1.85;}
+
+	.titlebar{background:linear-gradient(135deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));color:#fff;padding:34px 30px 30px;}
+	.titlebar .inner{max-width:1600px;margin:0 auto;}
+	.titlebar h1{font-size:1.9em;margin:0 0 8px;color:#fff;}
+	.titlebar .lead{font-size:.92em;color:#dde6f7;background:transparent;}
+	.titlebar .date{font-size:.88em;color:#c9d8f2;background:transparent;margin-top:6px;}
+
+	.wrap{max-width:1600px;margin:0 auto;padding:0 30px;}
+
+	a{color:var(--link,#1a4fa0);background:transparent;}
+
+	.toc{margin:26px 0 0;}
+	.toc ol{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:12px 0 0;counter-reset:tocn;}
+	.toc li{counter-increment:tocn;}
+	.toc a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+		text-overflow:ellipsis;white-space:normal;width:310px;max-width:100%;
+		background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:700;font-size:.92em;}
+	.toc a::before{content:counter(tocn) ". ";font-weight:700;}
+
+	section{background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border:1px solid var(--line,#d9dfe8);border-radius:10px;padding:4px 26px 26px;margin:34px 0;}
+	section h1{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:14px 20px;margin:26px 0 20px;border-radius:8px;
+		box-shadow:0 3px 10px rgba(18,34,77,.22);font-size:1.4em;}
+	h2{background:linear-gradient(90deg,var(--soft,#f2f5fb),#fff);color:var(--accent,#12224d);
+		border-left:6px solid var(--accent,#12224d);padding:6px 12px;margin:30px 0 12px;
+		font-size:1.12em;border-radius:0 6px 6px 0;}
+	h3{display:inline-block;color:var(--accent,#12224d);background:transparent;
+		border-bottom:2px dotted var(--accent2,#2f5fbf);padding-bottom:3px;margin:20px 0 8px;font-size:1em;}
+	p{background:transparent;color:var(--ink,#1c2330);}
+
+	.figure{background:#fff;color:var(--ink,#1c2330);border:1px solid var(--line,#d9dfe8);
+		border-radius:8px;padding:14px 16px;margin:12px 0 18px;overflow-x:auto;
+		box-shadow:0 2px 6px rgba(18,34,77,.08);}
+
+	.tablewrap{overflow-x:auto;margin:12px 0;}
+	table{border-collapse:collapse;width:100%;background:#fff;color:var(--ink,#1c2330);
+		border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(18,34,77,.10);font-size:.92em;
+		line-height:1.5;}
+	th{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:6px 11px;text-align:left;white-space:nowrap;font-weight:700;}
+	td{padding:6px 11px;border-bottom:1px solid var(--line,#d9dfe8);vertical-align:top;
+		background:transparent;color:var(--ink,#1c2330);}
+	tr:nth-child(even) td{background:#fafbfe;color:var(--ink,#1c2330);}
+	td.num{text-align:right;white-space:nowrap;}
+	td.nowrap{white-space:nowrap;}
+
+	.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.82em;font-weight:700;
+		white-space:nowrap;color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+	.b-ok{color:#fff;background:linear-gradient(100deg,#1d7a3c,#45b56c);}
+	.b-ng{color:#fff;background:linear-gradient(100deg,#a51f22,#e05a5c);}
+	.b-warn{color:#fff;background:linear-gradient(100deg,#b8620a,#f0a548);}
+	.b-none{color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+
+	.callout{border-left:6px solid var(--accent,#12224d);
+		background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+	.callout strong{color:var(--accent,#12224d);background:transparent;}
+
+	code{background:var(--code-bg,#f4f6fa);border:1px solid var(--line,#d9dfe8);color:#17335f;
+		padding:1px 5px;border-radius:4px;font-size:.92em;
+		font-family:Consolas,"Courier New",monospace;}
+	pre{background:#fff;color:var(--ink,#1c2330);border:1px solid var(--line,#d9dfe8);
+		border-left:5px solid var(--accent2,#2f5fbf);border-radius:0 8px 8px 0;
+		padding:13px 16px;overflow-x:auto;font-size:.9em;line-height:1.6;
+		font-family:Consolas,"Courier New",monospace;}
+	pre code{background:transparent;border:none;color:var(--ink,#1c2330);padding:0;}
+
+	ul,ol{background:transparent;color:var(--ink,#1c2330);}
+
+	footer{max-width:1600px;margin:40px auto 0;padding:18px 30px 0;
+		border-top:1px solid var(--line,#d9dfe8);color:var(--ink-soft,#4a5568);
+		background:#fff;font-size:.88em;}
+</style>
+</head>
+<body>
+
+<div class="titlebar"><div class="inner">
+<h1>プロセスメモリ調査ツール — 計画と出力構成</h1>
+<div class="lead">PowerShell 5.1 で全プロセスのメモリと起動時刻を調べ、HTML レポートにする</div>
+<div class="date">📅 作成: 2026-09-05 / 更新: 2026-09-05</div>
+</div></div>
+
+<div class="wrap">
+
+<nav class="toc">
+<ol>
+<li class="ch01"><a href="#ch01">この計画について</a></li>
+<li class="ch02"><a href="#ch02">目的と方針</a></li>
+<li class="ch03"><a href="#ch03">取得する情報と日本語化</a></li>
+<li class="ch04"><a href="#ch04">出力の仕様</a></li>
+<li class="ch05"><a href="#ch05">実行環境と権限</a></li>
+<li class="ch06"><a href="#ch06">課題と考察の設計</a></li>
+<li class="ch07"><a href="#ch07">前回との比較</a></li>
+<li class="ch08"><a href="#ch08">章構成の再編</a></li>
+<li class="ch09"><a href="#ch09">判定ロジックとしきい値</a></li>
+<li class="ch10"><a href="#ch10">ログの保管と圧縮</a></li>
+<li class="ch11"><a href="#ch11">実装の段取り</a></li>
+</ol>
+</nav>
+
+<!-- ============================================================ -->
+<section class="ch01" id="ch01">
+<h1>この計画について</h1>
+
+<h2>この文書の構成</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>章</th><th>内容</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">2〜5</td><td>ツールの仕様。目的・取得する情報・出力・実行環境と権限</td><td class="nowrap"><span class="badge b-ok">実装済み</span></td></tr>
+<tr><td class="nowrap">6〜7</td><td>レポートに考察と前回比較を持たせる設計</td><td class="nowrap"><span class="badge b-none">未着手</span></td></tr>
+<tr><td class="nowrap">8〜9</td><td>章構成の再編と判定のしきい値</td><td class="nowrap"><span class="badge b-none">未着手</span></td></tr>
+<tr><td class="nowrap">10</td><td>古いログの 7z 圧縮と自動実行</td><td class="nowrap"><span class="badge b-none">未着手</span></td></tr>
+<tr><td class="nowrap">11</td><td>実装の段取り</td><td class="nowrap">—</td></tr>
+</tbody>
+</table></div>
+
+<h2>いまの成果物</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>ファイル</th><th>役割</th><th>文字コード</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">tools/80_ops/inspect-process-memory.ps1</td><td>本体</td><td class="nowrap">BOM 付き UTF-8＋CRLF</td></tr>
+<tr><td class="nowrap">tools/80_ops/inspect-process-memory.cmd</td><td>ダブルクリック用のランチャー</td><td class="nowrap">SJIS＋CRLF</td></tr>
+<tr><td class="nowrap">logs/yyyymmdd-hhmmss-mem-log.html</td><td>実行ごとの出力</td><td class="nowrap">BOM なし UTF-8</td></tr>
+</tbody>
+</table></div>
+
+<h2>決まったこと</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>決定</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">章構成</td><td>B 案（8 章）。所見を前半、根拠データを後半に置く</td><td class="nowrap"><span class="badge b-ok">確定</span></td></tr>
+<tr><td class="nowrap">AI の考察の置き場</td><td>HTML に埋め込む。別ファイルにしない</td><td class="nowrap"><span class="badge b-ok">確定</span></td></tr>
+<tr><td class="nowrap">判定のしきい値</td><td>8 章の表の値で進める</td><td class="nowrap"><span class="badge b-warn">暫定</span></td></tr>
+</tbody>
+</table></div>
+<p>しきい値は運用しながら変える前提で置いている。値を変えたらこの文書の 8 章を直す。</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch02" id="ch02">
+<h1>目的と方針</h1>
+
+<h2>何のためのツールか</h2>
+<p>Windows PC で「いま何がメモリを使っているのか」「それはいつから動いているのか」を、1 回の実行で人が読める形にする。タスクマネージャーは<strong>いまの一覧</strong>しか見せず、起動時刻・コマンドライン・親子関係を並べて眺めることができない。それを 1 枚の HTML にまとめる。</p>
+
+<h2>方針</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>方針</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">PowerShell 5.1 で動かす</td><td>Windows に標準で入っている。PowerShell 7 のインストールを前提にしない</td></tr>
+<tr><td class="nowrap">実行のたびに記録を残す</td><td>常駐はしない。1 回ごとに HTML と JSON を残し、次回はその JSON と比べる（<a href="#ch07">7 章</a>）</td></tr>
+<tr><td class="nowrap">読むだけ。操作しない</td><td>プロセスの終了・優先度変更などの機能は持たせない</td></tr>
+<tr><td class="nowrap">出力は単独の HTML</td><td>1 ファイルで完結させ、外部 CSS も CDN も参照しない。誰に渡してもそのまま開ける</td></tr>
+<tr><td class="nowrap">ローカル固有の情報を残さない</td><td>ユーザー名・コンピューター名・実体パスを出力前に置き換える</td></tr>
+</tbody>
+</table></div>
+
+<h2>処理の流れ</h2>
+
+<div class="figure">
+<svg viewBox="0 0 1140 300" role="img" style="max-width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+	<linearGradient id="g-02-1-s1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+	<linearGradient id="g-02-1-s2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+	<linearGradient id="g-02-1-s3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+	<linearGradient id="g-02-1-s4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+	<linearGradient id="g-02-1-s5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<marker id="g-02-1-arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5568"/>
+	</marker>
+</defs>
+
+<rect x="10"  y="40" width="196" height="60" rx="8" fill="url(#g-02-1-s1)"/>
+<text x="108" y="68"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">1. 収集</text>
+<text x="108" y="88"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">WMI／CIM から取得</text>
+
+<rect x="238" y="40" width="196" height="60" rx="8" fill="url(#g-02-1-s2)"/>
+<text x="336" y="68"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">2. 突き合わせ</text>
+<text x="336" y="88"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">PID をキーに結合</text>
+
+<rect x="466" y="40" width="196" height="60" rx="8" fill="url(#g-02-1-s3)"/>
+<text x="564" y="68"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">3. 日本語化</text>
+<text x="564" y="88"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">辞書＋引数の解析</text>
+
+<rect x="694" y="40" width="196" height="60" rx="8" fill="url(#g-02-1-s4)"/>
+<text x="792" y="62"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">4. 判定・所見</text>
+<text x="792" y="80"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">しきい値で判定</text>
+<text x="792" y="95"  text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">★ これから追加</text>
+
+<rect x="922" y="40" width="196" height="60" rx="8" fill="url(#g-02-1-s5)"/>
+<text x="1020" y="68" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">5. HTML 出力</text>
+<text x="1020" y="88" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">logs へ書き出し</text>
+
+<line x1="210" y1="70" x2="230" y2="70" stroke="#4a5568" stroke-width="2" marker-end="url(#g-02-1-arw)"/>
+<line x1="438" y1="70" x2="458" y2="70" stroke="#4a5568" stroke-width="2" marker-end="url(#g-02-1-arw)"/>
+<line x1="666" y1="70" x2="686" y2="70" stroke="#4a5568" stroke-width="2" marker-end="url(#g-02-1-arw)"/>
+<line x1="894" y1="70" x2="914" y2="70" stroke="#4a5568" stroke-width="2" marker-end="url(#g-02-1-arw)"/>
+
+<text x="10"  y="140" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">Win32_Process</text>
+<text x="10"  y="160" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">Win32_Service</text>
+<text x="10"  y="180" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">Win32_OperatingSystem</text>
+<text x="10"  y="200" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">Get-Process</text>
+
+<text x="238" y="140" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">1 プロセス 1 行に統合</text>
+<text x="238" y="160" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">親子関係の組み立て</text>
+<text x="238" y="180" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">個人情報の置き換え</text>
+
+<text x="466" y="140" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">実行ファイル名の辞書</text>
+<text x="466" y="160" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">ホスト中のサービス名</text>
+<text x="466" y="180" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">--type= ／ 実行対象</text>
+
+<text x="694" y="140" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">逼迫度の判定</text>
+<text x="694" y="160" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">カテゴリ別の内訳</text>
+<text x="694" y="180" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">気になる兆候の抽出</text>
+<text x="694" y="200" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">前回の JSON との差分</text>
+
+<text x="922" y="140" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">SVG グラフ</text>
+<text x="922" y="160" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">表・プロセスツリー</text>
+<text x="922" y="180" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">AI の考察の枠</text>
+<text x="922" y="200" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#1c2330">JSON（次回の比較用）</text>
+
+<text x="10" y="245" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">1〜3 と、5 のうち HTML の出力は実装済み。4 と、5 の JSON・AI の考察の枠がこれからの拡張にあたる。</text>
+</svg>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch03" id="ch03">
+<h1>取得する情報と日本語化</h1>
+
+<h2>どこから何を取るか</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>取得元</th><th>取れるもの</th></tr></thead>
+<tbody>
+<tr>
+<td class="nowrap">Win32_Process</td>
+<td>PID・親 PID・プロセス名・起動日時・実行ファイルのパス・コマンドライン・ワーキングセット・プライベート・仮想サイズ・スレッド数・ハンドル数・CPU 時間</td>
+</tr>
+<tr>
+<td class="nowrap">Win32_Service</td>
+<td>PID からホストしているサービスの表示名（日本語ロケールなら日本語で返る）</td>
+</tr>
+<tr>
+<td class="nowrap">Win32_OperatingSystem</td>
+<td>物理メモリの総量・空き・システム起動時刻・OS 名</td>
+</tr>
+<tr>
+<td class="nowrap">Get-Process</td>
+<td>FileVersionInfo の説明（辞書に無いプロセスの補助として使う）</td>
+</tr>
+</tbody>
+</table></div>
+
+<h2>Get-Process を主にしない理由</h2>
+<p>起動時刻と CPU 時間は、どちらも <code>Get-Process</code> から取れる。しかし<strong>他ユーザーや昇格したプロセスではアクセス拒否になる</strong>。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>欲しいもの</th><th>使わない方</th><th>使う方</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">起動時刻</td><td class="nowrap">Get-Process の StartTime</td><td class="nowrap">Win32_Process の CreationDate</td><td>非管理者でもほぼ全件取れる。実測でも取得不可は 0 件</td></tr>
+<tr><td class="nowrap">CPU 時間</td><td class="nowrap">Get-Process の CPU</td><td class="nowrap">UserModeTime ＋ KernelModeTime</td><td>同上。100ns 単位なので 1e7 で割って秒にする</td></tr>
+</tbody>
+</table></div>
+
+<h2>実行内容を日本語で補う</h2>
+<p>プロセス名だけでは何が動いているのか分からない。3 つを組み合わせて 1 つの説明文にする。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>材料</th><th>中身</th><th>出力例</th></tr></thead>
+<tbody>
+<tr>
+<td class="nowrap">実行ファイル名の辞書</td>
+<td>約 130 件。Windows のシステムプロセス・主要アプリ・開発ツール</td>
+<td class="nowrap">エクスプローラー（デスクトップ・タスクバー・ファイル操作）</td>
+</tr>
+<tr>
+<td class="nowrap">ホスト中のサービス</td>
+<td>Win32_Service を PID で突き合わせ、表示名を並べる。4 件以上は「他 N 件」</td>
+<td class="nowrap">Windows サービスのホスト（サービス: Windows Audio）</td>
+</tr>
+<tr>
+<td class="nowrap">コマンドラインの解析</td>
+<td><code>--type=</code> の役割、<code>-k</code> のサービスグループ、スクリプトや jar の実行対象</td>
+<td class="nowrap">Google Chrome（役割: タブの描画）<br>Node.js（実行対象: index.js）</td>
+</tr>
+</tbody>
+</table></div>
+
+<p>辞書に無いものは FileVersionInfo の説明にフォールバックし、それも無ければ「不明」と書く。<code>--type=</code> は <code>renderer</code> → タブの描画、<code>gpu-process</code> → GPU 処理、のように日本語へ引き直す。</p>
+
+<div class="callout"><strong>コマンドラインの解析は管理者権限が要る。</strong>非管理者だと 479 件中 210 件が空欄になり、Chromium 系の役割は 1 件も付かなかった。管理者で実行すると取得不可は 25 件（<code>Idle</code>・<code>System</code> など本質的に持たないもの）まで減り、役割つきが 160 件に増える。</div>
+
+<h2>親子関係の組み立て</h2>
+<p>親 PID でツリーを組むが、<strong>PID は使い回される</strong>。親が先に終了して同じ番号が別のプロセスに割り当てられると、無関係なものが親として繋がる。<strong>親の起動時刻が子より後なら親とみなさない</strong>ことで防ぐ。</p>
+<p>循環参照に備えて深さ 20 で打ち切り、木に載らなかったプロセスは「親子関係をたどれなかったプロセス」として末尾に並べる。全件がどこかに必ず現れる。</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch04" id="ch04">
+<h1>出力の仕様</h1>
+
+<h2>ファイル</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">置き場</td><td class="nowrap">logs/yyyy/yyyymm/yyyymmdd/</td></tr>
+<tr><td class="nowrap">ファイル名</td><td class="nowrap">yyyymmdd-hhmmss-mem-log.html</td></tr>
+<tr><td class="nowrap">文字コード</td><td class="nowrap">BOM なし UTF-8</td></tr>
+<tr><td class="nowrap">大きさの目安</td><td class="nowrap">約 900 KB（プロセス 490 件のとき）</td></tr>
+</tbody>
+</table></div>
+<p>実行のたびに 1 ファイル作る。追記はしない。</p>
+<p><strong>日付で 3 階層に分ける。</strong>1 回あたり HTML と JSON で約 1 MB あり、定期実行を始めれば 1 つのフォルダに溜まり続ける。年・月・日で切っておけば、エクスプローラーで開いたときも、古い分をまとめて捨てるときも扱える。ファイル名は階層と重複するが、単体で取り出しても日時が分かるほうがよいので短くしない。</p>
+
+<h2>HTML の作り</h2>
+<ul>
+<li><strong>単独の HTML</strong>。CSS はすべて <code>&lt;style&gt;</code> に書き、外部ファイルも CDN も参照しない</li>
+<li><code>&lt;head&gt;</code> に <code>&lt;meta name="md-skip"&gt;</code> を入れる。Markdown 化の対象にしない</li>
+<li>幅の広い表とコードは <code>overflow-x: auto</code> のラッパーで包む。ページ全体は横に伸びない</li>
+<li>表は上下を詰める（<code>padding: 1px 10px</code>、表内だけ <code>line-height: 1.3</code>）。1 画面あたり 39 行が入る</li>
+</ul>
+
+<h2>SVG グラフ</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>図</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">物理メモリの使用状況</td><td>使用中（赤）と空き（緑）の積み上げ帯。凡例つき</td></tr>
+<tr><td class="nowrap">メモリ上位のプロセス</td><td>横棒。紫→赤の虹色で、バーに実行内容のツールチップを持たせる</td></tr>
+<tr><td class="nowrap">プロセス名ごとの合計</td><td>横棒。同名をまとめた合計の多い順</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout"><strong>SVG の座標に <code>{0:N1}</code> 書式を使ってはいけない。</strong>桁区切りのカンマが入り <code>width="1,094.4"</code> という無効な属性値になる。ブラウザはエラーを出さず、その矩形を幅ゼロで描く。座標・幅は <code>InvariantCulture</code> の <code>0.0</code> 書式で組み立てる（<code>Format-Coord</code>）。表示する数値のほうはカンマ入りでよい。</div>
+
+<h2>ローカル固有情報の置き換え</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>対象</th><th>置き換え後</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">ユーザープロファイルのパス</td><td class="nowrap">~</td></tr>
+<tr><td class="nowrap">C:\Users\ 配下の名前</td><td class="nowrap">C:\Users\&lt;username&gt;</td></tr>
+<tr><td class="nowrap">ユーザー名</td><td class="nowrap">&lt;username&gt;</td></tr>
+<tr><td class="nowrap">コンピューター名</td><td class="nowrap">&lt;hostname&gt;</td></tr>
+<tr><td class="nowrap">subst の実体パス</td><td class="nowrap">元のドライブ表記（N: など）</td></tr>
+</tbody>
+</table></div>
+<p><strong>subst の置き換えは他より先に行う。</strong>実体がユーザープロファイル配下にある環境では、先にユーザー名が伏せ字になるとドライブ表記へ戻せなくなる。</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch05" id="ch05">
+<h1>実行環境と権限</h1>
+
+<h2>文字コードと改行</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>ファイル</th><th>文字コード</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">ps1</td><td class="nowrap">BOM 付き UTF-8＋CRLF</td><td>BOM が無いと Windows PowerShell 5.1 で日本語が壊れる</td></tr>
+<tr><td class="nowrap">cmd</td><td class="nowrap">SJIS＋CRLF</td><td>コンソールのコードページに合わせる</td></tr>
+</tbody>
+</table></div>
+
+<h2>管理者権限への昇格</h2>
+<p>コマンドラインを全件取得するため管理者権限で動かす。<strong>昇格は ps1 が自分で行う</strong>。cmd ランチャーは ps1 を呼ぶだけにしてある。</p>
+<pre><code class="language-batch">powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0inspect-process-memory.ps1" -Open
+pause</code></pre>
+<p>UAC を取り消した場合は止まらず、非管理者のまま続行する。取れる情報が減るだけで、メモリ量・起動時刻・サービス名は全件取れる。</p>
+
+<h2>subst ドライブの落とし穴</h2>
+
+<div class="callout"><strong>subst で割り当てたドライブは、UAC で昇格したプロセスからは存在しない。</strong>割り当てはログオンセッション単位で、昇格トークンは別セッションとして扱われるため引き継がれない。<code>-File "N:\...\xxx.ps1"</code> を渡すとパスが解決できず、スクリプトが<strong>起動すらしない</strong>。ウィンドウが一瞬で閉じるだけで、エラーも残らない。</div>
+
+<p>対処として、昇格する前に自分のパスを実体へ直す。<code>subst</code> の出力は「<code>N:\: =&gt; C:\〈実体フォルダ〉</code>」の形なので、正規表現 1 本で解決できる。</p>
+
+<pre><code class="language-powershell">function Resolve-SubstPath([string]$Path) {
+	$root = [System.IO.Path]::GetPathRoot($Path)
+	if (-not $root) { return $Path }
+	$drive = $root.TrimEnd('\')
+	if ($drive.Length -ne 2) { return $Path }
+
+	foreach ($line in (subst)) {
+		# subst の出力は「N:\: => C:\〈実体フォルダ〉」の形
+		$m = [regex]::Match([string]$line, '^\s*([A-Za-z]:)\\:\s+=&gt;\s+(.+?)\s*$')
+		if ($m.Success -and $m.Groups[1].Value -eq $drive) {
+			$script:FoundSubstDrive = $drive
+			$script:FoundSubstRoot = $m.Groups[2].Value
+			return $m.Groups[2].Value + $Path.Substring($drive.Length)
+		}
+	}
+	return $Path
+}</code></pre>
+
+<p>解決した対応は <code>-SubstDrive</code> / <code>-SubstRoot</code> で昇格先へ渡し、表示と出力のパスを元のドライブ表記へ戻す。<strong>昇格先で <code>subst</code> を実行しても何も返らない</strong>（そのセッションに割り当てが無い）ため、非管理者側で調べて渡すしかない。</p>
+
+<h2>Start-Process に引数を渡すとき</h2>
+<div class="callout"><strong>PowerShell 5.1 の <code>Start-Process -ArgumentList</code> は、配列の要素に含まれる空白を引用符で守らない。</strong>パスに空白がある環境で分解されて壊れる。引用符を自分で入れた 1 本の文字列として渡す。</div>
+
+<h2>カレントディレクトリに依存しない</h2>
+<p>昇格するとカレントは <code>C:\Windows\System32</code> になる。出力先は <code>$MyInvocation.MyCommand.Path</code> から計算しているので影響を受けない。</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch06" id="ch06">
+<h1>課題と考察の設計</h1>
+
+<h2>いまの出力に足りないもの</h2>
+<p>現行の出力はすべて<strong>事実の一覧</strong>で、読み手が自分で問題を探すことを前提にしている。2026-09-05 の実測ではこうだった。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>実測値</th><th>レポートに書かれていたか</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">物理メモリ 使用率</td><td class="num">95.4%（15,386 / 16,130 MB）</td><td>数値のみ。逼迫とは書いていない</td></tr>
+<tr><td class="nowrap">Memory Compression</td><td class="num">2,961 MB</td><td>グラフの 1 位。意味の説明なし</td></tr>
+<tr><td class="nowrap">svchost.exe</td><td class="num">99 件 / 607.8 MB</td><td>件数のみ</td></tr>
+<tr><td class="nowrap">chrome.exe</td><td class="num">18 件 / 1,572.6 MB</td><td>件数のみ</td></tr>
+<tr><td class="nowrap">上位 10 種類の占有</td><td class="num">9,336.6 / 12,301.1 MB＝75.9%</td><td>出していない</td></tr>
+<tr><td class="nowrap">システム稼働時間</td><td class="num">8 日 18 時間</td><td>数値のみ</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout"><strong>足りないのは数値ではなく、数値の意味づけ。</strong>同じデータから「いま何が起きているか」「何をすれば改善するか」を導く層が無い。</div>
+
+<h2>考察を 2 つの層に分ける</h2>
+<p><strong>再現性のある判定</strong>と<strong>文脈に依存する判断</strong>は性質が違う。一括りにすると設計できないので層を分ける。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>層</th><th>誰が書くか</th><th>いつ出るか</th><th>書けること</th><th>書けないこと</th></tr></thead>
+<tbody>
+<tr>
+<td class="nowrap">レベル 1<br>ルールベースの所見</td>
+<td class="nowrap">ps1 が自動生成</td>
+<td class="nowrap">実行のたび毎回</td>
+<td>しきい値で判定できるもの。逼迫度・占有率・長期稼働・多重起動・リーク疑い・回収見込み量</td>
+<td>「なぜそうなっているか」。基準の妥当性そのもの</td>
+</tr>
+<tr>
+<td class="nowrap">レベル 2<br>AI による考察</td>
+<td class="nowrap">セッションが追記</td>
+<td class="nowrap">依頼したとき</td>
+<td>複数の所見をつないだ解釈。この PC の使い方を踏まえた提案。前回との比較</td>
+<td>自動では出ない（毎回の実行では付かない）</td>
+</tr>
+</tbody>
+</table></div>
+
+<h2>AI の考察は HTML に埋め込む</h2>
+<p>別ファイルにせず、レポート本体の中に置く。読む人がレポート 1 枚を開けば所見も考察も揃う状態にする。</p>
+<p>ps1 は考察を書けないので、<strong>空の枠を出力しておき、そこへ後から追記する</strong>形にする。枠にはコメントで目印を入れ、AI が差し込む位置を機械的に見つけられるようにする。</p>
+<pre><code class="language-html">&lt;!-- AI:consideration --&gt;
+&lt;p&gt;（未記入。実行しただけではここは空欄になる）&lt;/p&gt;
+&lt;!-- /AI:consideration --&gt;</code></pre>
+<p>あわせて ps1 は <code>yyyymmdd-hhmmss-mem-data.json</code> を出力する（形式は <a href="#ch07">7 章</a>）。AI は 900 KB の HTML を読むのではなく、この JSON を読んで考察を書き、上の枠へ差し込む。前回との比較も同じ JSON を材料にする。</p>
+
+<h2>レベル 1 の観点</h2>
+
+<h3>A. 全体の逼迫度</h3>
+<p>物理メモリの使用率・圧縮メモリの大きさ・コミットチャージの 3 つを合わせて 4 段階で判定する。圧縮メモリを単独で見ないのは、これが<strong>逼迫の結果</strong>であって原因ではないため。</p>
+
+<h3>B. 誰がメモリを使っているか</h3>
+<p>プロセスをカテゴリに束ねて内訳を出す。490 件の一覧より、6 カテゴリの積み上げのほうが原因に近い。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>カテゴリ</th><th>含めるもの</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">Windows 本体</td><td>System・Registry・Memory Compression・csrss・services・svchost・dwm・explorer など</td></tr>
+<tr><td class="nowrap">セキュリティ</td><td>Microsoft Defender（MsMpEng・NisSrv）・サードパーティのウイルス対策</td></tr>
+<tr><td class="nowrap">ブラウザ</td><td>chrome・msedge・firefox・msedgewebview2</td></tr>
+<tr><td class="nowrap">開発ツール</td><td>Code・node・powershell・pwsh・git・electron など</td></tr>
+<tr><td class="nowrap">業務アプリ</td><td>Office・Teams・Slack など</td></tr>
+<tr><td class="nowrap">その他</td><td>辞書に無いもの</td></tr>
+</tbody>
+</table></div>
+
+<h3>C. 長く動いているもの</h3>
+<p>起動からの経過時間とメモリ量を掛け合わせる。長期稼働かつ大容量のプロセスは、終了・再起動で回収できる候補になる。「稼働が長い」だけでは所見にならない（システムプロセスは常に長い）。</p>
+
+<h3>D. 気になる兆候</h3>
+<p>ハンドル数・スレッド数・多重起動数・実行ファイルの素性を見る。ここは<strong>断定しない</strong>。「リークしている」ではなく「リークの疑いがある。確認するならこれを見る」と書く。単発のスナップショットでは増加傾向を測れないため。</p>
+
+<h3>E. 起動の時系列</h3>
+<p>システム起動直後（5 分以内）に立ち上がったものと、その後に立ち上がったものを分ける。前者は常駐・スタートアップ、後者はユーザー操作由来。どちらがメモリを食っているかで対処が変わる。</p>
+
+<h3>F. 回収見込み</h3>
+<p>「これを終了すると約 N MB 空く」を具体的な数値で出す。ワーキングセットの合計で概算し、共有ページの重複計上があるため<strong>上限の目安</strong>であることを明記する。</p>
+
+<div class="callout"><strong>断定を避ける表現を既定にする。</strong>スナップショット 1 回から言えることには限りがある。「疑いがある」「確認するならここを見る」と書き、確定した事実（使用率・件数）と区別する。</div>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch07" id="ch07">
+<h1>前回との比較</h1>
+
+<h2>差分が要る理由</h2>
+<p>スナップショット 1 回では「大きい」ことしか言えず、「増えている」かどうかが分からない。9 章のリーク判定を「疑い」までしか出せないのは比較対象が無いためで、前回の記録と突き合わせれば増加を根拠のある形で示せる。</p>
+<p>この計画で作るのは<strong>前回 1 件との比較</strong>まで。定期実行は将来やるが、いまは手動実行のたびに直前の記録と比べる。</p>
+
+<h2>差分の考え方</h2>
+
+<div class="figure">
+<svg viewBox="0 0 1140 300" role="img" style="max-width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+	<linearGradient id="g-07-1-prev" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(250,78%,25%)"/><stop offset="1" stop-color="hsl(250,58%,55%)"/></linearGradient>
+	<linearGradient id="g-07-1-cur" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(250,78%,25%)"/><stop offset="1" stop-color="hsl(250,58%,55%)"/></linearGradient>
+	<linearGradient id="g-07-1-gone" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<linearGradient id="g-07-1-keep" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+	<linearGradient id="g-07-1-new" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+	<marker id="g-07-1-arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5568"/>
+	</marker>
+</defs>
+
+<rect x="20" y="30" width="240" height="46" rx="8" fill="url(#g-07-1-prev)"/>
+<text x="140" y="59" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">前回の JSON</text>
+<rect x="20" y="94" width="240" height="46" rx="8" fill="url(#g-07-1-cur)"/>
+<text x="140" y="123" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">今回の収集結果</text>
+
+<line x1="272" y1="85" x2="330" y2="85" stroke="#4a5568" stroke-width="2" marker-end="url(#g-07-1-arw)"/>
+<text x="301" y="76" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">突合</text>
+
+<text x="345" y="22" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">同定キー ＝ PID ＋ 作成時刻（CreationDate）</text>
+
+<rect x="345" y="30" width="250" height="60" rx="8" fill="url(#g-07-1-gone)"/>
+<text x="470" y="55" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">終了した</text>
+<text x="470" y="75" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">前回にあり／今回に無い</text>
+
+<rect x="345" y="100" width="250" height="60" rx="8" fill="url(#g-07-1-keep)"/>
+<text x="470" y="125" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">継続している</text>
+<text x="470" y="145" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">両方にある → メモリの増減を見る</text>
+
+<rect x="345" y="170" width="250" height="60" rx="8" fill="url(#g-07-1-new)"/>
+<text x="470" y="195" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">新しく起動した</text>
+<text x="470" y="215" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">前回に無く／今回にある</text>
+
+<line x1="607" y1="130" x2="665" y2="130" stroke="#4a5568" stroke-width="2" marker-end="url(#g-07-1-arw)"/>
+
+<text x="680" y="52" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">1 章「結論と所見」に差し込む所見:</text>
+<text x="680" y="82" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・使用率と空きの変化</text>
+<text x="680" y="107" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・カテゴリ別の増減</text>
+<text x="680" y="132" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・増加が大きい継続プロセス</text>
+<text x="680" y="157" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・新規起動と終了の件数・合計</text>
+<text x="680" y="182" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・経過時間（前回からの間隔）</text>
+
+<text x="20" y="270" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">前回の記録が無ければ「初回」と表示し、差分の節は出さない。</text>
+</svg>
+</div>
+
+<h2>プロセスの同定</h2>
+<p>差分を取るには「前回のあれ」と「今回のこれ」が同じプロセスだと言えなければならない。<strong>PID と作成時刻（<code>CreationDate</code>）の 2 つを組み合わせる</strong>のが定石で、これに従う。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>キーの候補</th><th>可否</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">PID 単独</td><td class="nowrap"><span class="badge b-ng">不可</span></td><td>プロセスが終了すると番号が別のプロセスに再利用される。一意なのは<strong>そのプロセスが生きている間だけ</strong></td></tr>
+<tr><td class="nowrap">プロセス名 単独</td><td class="nowrap"><span class="badge b-ng">不可</span></td><td>同名が多数ある（実測で chrome 18 件・svchost 99 件）</td></tr>
+<tr><td class="nowrap">プロセス名 ＋ 作成時刻</td><td class="nowrap"><span class="badge b-warn">不十分</span></td><td>一意性を保証する仕組みが無い。PID を使えば済む話なので選ばない</td></tr>
+<tr><td class="nowrap">PID ＋ 作成時刻</td><td class="nowrap"><span class="badge b-ok">採用</span></td><td>ある時点で PID が一意なことは OS が保証する。作成時刻を足すと、時間をまたいだ番号の再利用も区別できる</td></tr>
+</tbody>
+</table></div>
+
+<h3>この組み合わせが定石である根拠</h3>
+<ul>
+<li><strong>PID の再利用は仕様</strong>。Microsoft のドキュメントにも「プロセス識別子は再利用されることがあり、値が一意なのは関連するプロセスが実行されている間だけ。終了後は無関係なプロセスに同じ値が割り当てられうる」と明記されている</li>
+<li><strong>Sysmon の <code>ProcessGuid</code> も作成時刻を中核に置く</strong>。マシン GUID の上位 32 ビット・プロセス作成時刻（Unix エポック秒）・ドライバ起動以降の連番、という構成になっている。PID だけでは足りないという前提で設計されている</li>
+<li><strong>OS 自身が同じ問題に手を打っている</strong>。Windows 10 1809 以降には <code>PsGetProcessStartKey</code> があり、再利用されない一意の識別子を返す。ただし<strong>カーネルモードのドライバ向け API で、WMI や PowerShell からは取れない</strong>。ユーザーモードで代替するのが PID ＋ 作成時刻にあたる</li>
+</ul>
+
+<p>PID は同定キーの一部であると同時に表示にも使う。3 章の親子関係の判定も同じ理由で「親の作成時刻が子より後なら親とみなさない」としており、考え方は一貫している。</p>
+
+<h3>参考</h3>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-psgetprocessstartkey">PsGetProcessStartKey — Microsoft Learn</a></li>
+<li><a href="https://learn.microsoft.com/en-us/answers/questions/234884/structure-of-process-guids-used-in-sysmon-etw-even">Structure of process GUIDs used in Sysmon ETW events — Microsoft Q&amp;A</a></li>
+<li><a href="https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon">Sysmon — Sysinternals</a></li>
+<li><a href="https://github.com/elastic/ecs/issues/672">Unique PID Fields and Generation — elastic/ecs</a></li>
+</ul>
+
+<h2>比較の材料は JSON にする</h2>
+<p>出力済みの HTML をパースして前回値を得る方法は取らない。表の構造を変えるたびに壊れる。<strong>ps1 が HTML と同時に JSON を出力し、比較はそちらだけを読む。</strong></p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">ファイル名</td><td class="nowrap">logs/yyyy/yyyymm/yyyymmdd/yyyymmdd-hhmmss-mem-data.json（HTML と同じフォルダ・同じ時刻）</td></tr>
+<tr><td class="nowrap">大きさの目安</td><td class="nowrap">約 150 KB（プロセス 490 件のとき）</td></tr>
+<tr><td class="nowrap">文字コード</td><td class="nowrap">BOM なし UTF-8</td></tr>
+<tr><td class="nowrap">読み手</td><td>次回実行時の ps1、および考察を書く AI</td></tr>
+</tbody>
+</table></div>
+
+<pre><code class="language-json">{
+  "schema": 1,
+  "takenAt": "2026-09-05T11:20:56.4820000+09:00",
+  "isAdmin": true,
+  "system": {
+    "totalBytes": 16916480000,
+    "freeBytes": 780337152,
+    "bootTime": "2026-08-28T16:50:02.0000000+09:00"
+  },
+  "totals": {
+    "processCount": 494,
+    "workingSetSum": 13901234567,
+    "byCategory": { "ブラウザ": 2396000000, "Windows 本体": 3120000000 }
+  },
+  "processes": [
+    {
+      "id": 57028, "ppid": 19200, "name": "chrome.exe",
+      "start": "2026-09-02T22:14:24.1230000+09:00",
+      "ws": 3879731, "priv": 4102300, "threads": 23, "handles": 301,
+      "cpuSec": 10.1, "category": "ブラウザ",
+      "note": "Google Chrome（役割: タブの描画）"
+    }
+  ]
+}</code></pre>
+
+<p>日時は ISO 8601 の文字列で持つ。<code>schema</code> は形式を変えたときに上げ、読み込み側は知らない版を見つけたら比較をあきらめて「比較不可」と書く。</p>
+
+<h2>比較する対象の選び方</h2>
+<ul>
+<li>既定では <code>logs</code> を再帰的に探し、<code>*-mem-data.json</code> のうち<strong>今回より前で最も新しいもの</strong>を使う。日付の階層に分かれていても、ファイル名自体に日時が入っているので名前順で選べる。フォルダの更新日時は見ない</li>
+<li>日をまたいでも問題なく前日の最後の記録を拾う。月初・年初も同じ</li>
+<li><code>-CompareWith &lt;path&gt;</code> で明示指定もできるようにする。「起動直後と比べたい」といった使い方に応える</li>
+<li>前回が無ければ差分の節は出さず、「初回」と表示する</li>
+</ul>
+
+<h2>出す差分</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>観点</th><th>内容</th><th>出力の形</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">全体</td><td>使用率・空き・プロセス数・ワーキングセット合計</td><td class="nowrap">使用率 93.1% → 95.4%（+2.3 pt）</td></tr>
+<tr><td class="nowrap">経過</td><td>前回の取得からの間隔</td><td class="nowrap">前回から 17 分 14 秒</td></tr>
+<tr><td class="nowrap">カテゴリ別</td><td>6 カテゴリそれぞれの増減</td><td class="nowrap">ブラウザ +312 MB ／ 開発ツール −45 MB</td></tr>
+<tr><td class="nowrap">継続の増減</td><td>両方にあるプロセスのメモリ差。増えた順に上位</td><td class="nowrap">chrome.exe #57028 +120 MB（稼働 3 日 12 時間）</td></tr>
+<tr><td class="nowrap">新規起動</td><td>件数と合計、上位数件</td><td class="nowrap">12 件・合計 480 MB</td></tr>
+<tr><td class="nowrap">終了</td><td>件数と合計、上位数件</td><td class="nowrap">8 件・合計 210 MB</td></tr>
+</tbody>
+</table></div>
+
+<h2>置き場は 1 章の中</h2>
+<p>独立した章にはせず、<strong>1 章「結論と所見」の中に「前回からの変化」の節</strong>として置く。差分は所見の一部であり、章を分けると総合判定と往復することになる。根拠として上位数件の表を添える程度にとどめ、全件の差分表は作らない。</p>
+
+<h2>この比較で言えないこと</h2>
+<div class="callout"><strong>2 点の比較では傾向を確定できない。</strong>1 回増えたことは、リークかもしれないし、単にその間に作業が増えただけかもしれない。所見は「前回から N MB 増えた」という事実にとどめ、「リークしている」とは書かない。連続する複数回の記録を並べて初めて傾向が言える。</div>
+
+<h2>実装で踏むであろう落とし穴</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>落とし穴</th><th>症状</th><th>対処</th></tr></thead>
+<tbody>
+<tr>
+<td class="nowrap">ConvertTo-Json の -Depth が既定 2</td>
+<td>入れ子が <code>System.Collections.Hashtable</code> という文字列になって出る</td>
+<td><code>-Depth 5</code> 以上を明示する</td>
+</tr>
+<tr>
+<td class="nowrap">要素 1 個の配列</td>
+<td>PowerShell 5.1 では読み戻したときスカラーに潰れる</td>
+<td>読み込み側で <code>@()</code> で包む</td>
+</tr>
+<tr>
+<td class="nowrap">日時のシリアライズ</td>
+<td>DateTime をそのまま入れると環境で表現が変わる</td>
+<td><code>ToString('o')</code> で ISO 8601 の文字列にしてから入れる</td>
+</tr>
+<tr>
+<td class="nowrap">書き出しのエンコーディング</td>
+<td><code>Out-File</code> だと BOM が付く</td>
+<td>HTML と同じく <code>[System.IO.File]::WriteAllText</code> で BOM なし UTF-8</td>
+</tr>
+<tr>
+<td class="nowrap">個人情報</td>
+<td>JSON にもパスとコマンドラインが入る</td>
+<td>HTML と同じ <code>Hide-Private</code> を通してから書く</td>
+</tr>
+</tbody>
+</table></div>
+
+<h2>将来の定期実行に向けて</h2>
+<p>いまは仕組みを作らないが、JSON の形式が将来を縛るため、以下を満たしておく。</p>
+<ul>
+<li><strong>1 実行 1 ファイル</strong>。追記型にしない。途中で壊れても他の回に影響しない</li>
+<li><strong>スキーマに版番号を持たせる</strong>。形式を変えても古い記録を読み分けられる</li>
+<li><strong>集計値も JSON に入れる</strong>。全プロセスを走査しなくても全体の比較ができる</li>
+<li><strong>引数だけで完結する</strong>。タスクスケジューラから対話なしで起動できる状態を保つ</li>
+</ul>
+<p>定期実行を始めると次の 2 つが要る。どちらもこの計画には含めない。</p>
+<ul>
+<li><strong>古いログの掃除</strong>。1 回あたり HTML と JSON で約 1 MB。放置すると増え続ける</li>
+<li><strong>HTML を作らないモード</strong>。定期取得では JSON だけ残し、HTML は見たいときに生成するほうが軽い</li>
+</ul>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch08" id="ch08">
+<h1>章構成の再編</h1>
+
+<h2>B 案（8 章）で進める</h2>
+<p>前半を所見、後半を根拠データにする。所見の各項目から、対応する後半の章へアンカーリンクを張る。「上位 10 種類で 75.9% を占める」という所見から、その集計表へ 1 クリックで飛べるようにする。</p>
+
+<div class="figure">
+<svg viewBox="0 0 1160 440" role="img" style="max-width:100%;height:auto;display:block;" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+	<linearGradient id="g-08-1-a" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-b" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-c" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-d" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-e" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(240,78%,25%)"/><stop offset="1" stop-color="hsl(240,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(200,78%,25%)"/><stop offset="1" stop-color="hsl(200,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(160,78%,25%)"/><stop offset="1" stop-color="hsl(160,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(120,78%,25%)"/><stop offset="1" stop-color="hsl(120,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n6" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(80,78%,25%)"/><stop offset="1" stop-color="hsl(80,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n7" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(40,78%,25%)"/><stop offset="1" stop-color="hsl(40,58%,55%)"/></linearGradient>
+	<linearGradient id="g-08-1-n8" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<marker id="g-08-1-arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5568"/>
+	</marker>
+</defs>
+
+<text x="20" y="22" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="15" font-weight="700" fill="#1c2330">現行（5 章）</text>
+<rect x="20" y="36"  width="420" height="38" rx="6" fill="url(#g-08-1-a)"/><text x="230" y="60" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">1. サマリ</text>
+<rect x="20" y="82"  width="420" height="38" rx="6" fill="url(#g-08-1-b)"/><text x="230" y="106" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">2. プロセス名ごとの集計</text>
+<rect x="20" y="128" width="420" height="38" rx="6" fill="url(#g-08-1-c)"/><text x="230" y="152" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">3. プロセス一覧（メモリ順）</text>
+<rect x="20" y="174" width="420" height="38" rx="6" fill="url(#g-08-1-d)"/><text x="230" y="198" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">4. 起動時刻順（古い順）</text>
+<rect x="20" y="220" width="420" height="38" rx="6" fill="url(#g-08-1-e)"/><text x="230" y="244" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">5. プロセスツリー</text>
+<text x="230" y="292" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#4a5568">すべて事実の一覧。読み手が自分で結論を組む</text>
+
+<line x1="470" y1="150" x2="580" y2="150" stroke="#4a5568" stroke-width="2" marker-end="url(#g-08-1-arw)"/>
+<text x="525" y="140" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">再編</text>
+
+<text x="610" y="22" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="15" font-weight="700" fill="#1c2330">B 案（8 章・採用）</text>
+<rect x="610" y="36"  width="420" height="38" rx="6" fill="url(#g-08-1-n1)"/><text x="820" y="60" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">1. 結論と所見　★新規</text>
+<rect x="610" y="82"  width="420" height="38" rx="6" fill="url(#g-08-1-n2)"/><text x="820" y="106" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">2. サマリ</text>
+<rect x="610" y="128" width="420" height="38" rx="6" fill="url(#g-08-1-n3)"/><text x="820" y="152" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">3. 内訳の分析　★新規</text>
+<rect x="610" y="174" width="420" height="38" rx="6" fill="url(#g-08-1-n4)"/><text x="820" y="198" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">4. 気になる兆候　★新規</text>
+<rect x="610" y="220" width="420" height="38" rx="6" fill="url(#g-08-1-n5)"/><text x="820" y="244" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">5. 起動の時系列　★図を追加</text>
+<rect x="610" y="266" width="420" height="38" rx="6" fill="url(#g-08-1-n6)"/><text x="820" y="290" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">6. プロセス名ごとの集計</text>
+<rect x="610" y="312" width="420" height="38" rx="6" fill="url(#g-08-1-n7)"/><text x="820" y="336" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">7. プロセス一覧（メモリ順）</text>
+<rect x="610" y="358" width="420" height="38" rx="6" fill="url(#g-08-1-n8)"/><text x="820" y="382" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">8. プロセスツリー</text>
+<text x="820" y="422" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#4a5568">前半が所見、後半が根拠データ</text>
+</svg>
+</div>
+
+<h2>各章に入るもの</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>章</th><th>中身</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td class="nowrap">結論と所見</td><td>総合判定のバッジ。ルールベースの所見。<strong>前回からの変化</strong>（<a href="#ch07">7 章</a>）。<strong>AI の考察の枠</strong>。各項目から後半へのリンク</td></tr>
+<tr><td class="num">2</td><td class="nowrap">サマリ</td><td>物理メモリの帯グラフ。システム情報。プロセス数と取得状況</td></tr>
+<tr><td class="num">3</td><td class="nowrap">内訳の分析</td><td>カテゴリ別の積み上げ。ブラウザ・開発ツールなどの合計</td></tr>
+<tr><td class="num">4</td><td class="nowrap">気になる兆候</td><td>長期稼働＋大容量・ハンドル過多・多重起動・素性不明</td></tr>
+<tr><td class="num">5</td><td class="nowrap">起動の時系列</td><td>起動時刻のヒストグラム（図）＋起動時刻順の全件表</td></tr>
+<tr><td class="num">6</td><td class="nowrap">プロセス名ごとの集計</td><td>現行のまま</td></tr>
+<tr><td class="num">7</td><td class="nowrap">プロセス一覧</td><td>現行のまま（メモリ順・全件）</td></tr>
+<tr><td class="num">8</td><td class="nowrap">プロセスツリー</td><td>現行のまま</td></tr>
+</tbody>
+</table></div>
+
+<h2>採用しなかった案</h2>
+<p>A 案（9 章）は、起動の時系列を「図の章」と「全件表の章」に分けるもの。<strong>2 つは同じ問いに答えるため、章を分けると読み手が往復することになる</strong>。目次バッジも 9 個だと 2 段目が 5 個で余白が空く。B 案は 4 個 × 2 段で収まる。</p>
+
+<h2>色相の振り直し</h2>
+<p>章が 5 → 8 になるので、全章の色相を計算し直す。刻みは 280 ÷ (8 − 1) = 40。</p>
+<pre><code class="language-text">ch01  280      ch05  120
+ch02  240      ch06   80
+ch03  200      ch07   40
+ch04  160      ch08    0</code></pre>
+<p>目次バッジの <code>li</code> にも同じクラスを付ける。一括置換のときは旧値と新値の衝突に注意する（140 が現行 ch03 と新 ch05 の両方に現れる）。</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch09" id="ch09">
+<h1>判定ロジックとしきい値</h1>
+
+<div class="callout"><strong>ここの値は暫定。</strong>運用しながら変える前提で置いている。変えたらこの表を直す。しきい値には根拠を書き残す。書かないと、次に見た人が値を動かしてよいのか判断できない。</div>
+
+<h2>全体の逼迫度</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>判定</th><th>条件（物理メモリ使用率）</th><th>根拠</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><span class="badge b-ok">余裕</span></td><td class="nowrap">70% 未満</td><td>キャッシュに回せる余地がある</td></tr>
+<tr><td class="nowrap"><span class="badge b-none">通常</span></td><td class="nowrap">70% 以上 85% 未満</td><td>Windows は空きメモリを遊ばせないため、この帯域は正常</td></tr>
+<tr><td class="nowrap"><span class="badge b-warn">やや逼迫</span></td><td class="nowrap">85% 以上 93% 未満</td><td>圧縮とページングが増え始める</td></tr>
+<tr><td class="nowrap"><span class="badge b-ng">逼迫</span></td><td class="nowrap">93% 以上</td><td>新しいアプリの起動で待ちが出る。2026-09-05 の実測は 93.1% → 95.4% と推移した</td></tr>
+</tbody>
+</table></div>
+
+<p>圧縮メモリ（Memory Compression）が物理メモリの <strong>10% 以上</strong>なら、逼迫判定の裏付けとして併記する。実測は 2,961 / 16,130 ＝ 18.4% で該当した。</p>
+
+<h2>個々のプロセス</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>所見</th><th>条件</th><th>根拠と注記</th></tr></thead>
+<tbody>
+<tr>
+<td class="nowrap">大口の占有</td>
+<td class="nowrap">単体で全体の 5% 以上</td>
+<td>16 GB 環境なら約 800 MB。1 プロセスとしては十分大きい</td>
+</tr>
+<tr>
+<td class="nowrap">再起動の候補</td>
+<td class="nowrap">稼働 3 日超 かつ 500 MB 超</td>
+<td>常駐アプリが肥大化する典型。終了すれば回収できる</td>
+</tr>
+<tr>
+<td class="nowrap">ハンドルリークの疑い</td>
+<td class="nowrap">ハンドル 5,000 超</td>
+<td>通常のアプリは数百。断定はせず「確認するならここ」と書く</td>
+</tr>
+<tr>
+<td class="nowrap">スレッド過多</td>
+<td class="nowrap">スレッド 200 超</td>
+<td>スレッドプールの暴走を疑う手掛かり</td>
+</tr>
+<tr>
+<td class="nowrap">多重起動</td>
+<td class="nowrap">同名 30 件超</td>
+<td>実測: svchost 99 件・cmd 34 件。svchost は正常なので、判定に<strong>除外リスト</strong>が要る</td>
+</tr>
+<tr>
+<td class="nowrap">素性が不明</td>
+<td class="nowrap">実行ファイルのパスが取れない、または Temp・ダウンロードフォルダ配下から起動</td>
+<td>非管理者で実行するとシステムプロセスが軒並み該当してしまう。<strong>管理者実行時のみ</strong>判定する</td>
+</tr>
+</tbody>
+</table></div>
+
+<div class="callout"><strong>svchost.exe の 99 件は正常。</strong>多重起動の判定をそのまま適用すると必ず最上位に出る。Windows が意図的にサービスを分離しているためで、除外リスト（svchost・conhost・cmd・RuntimeBroker 等）を持たないと所見が使いものにならない。</div>
+
+<h2>この方法で測れないもの</h2>
+<ul>
+<li><strong>増加傾向</strong>。スナップショット 1 回では、リークしているのか元から大きいのか区別できない。判定は「疑い」までにとどめる</li>
+<li><strong>実際の占有量</strong>。ワーキングセットは共有ページを各プロセスで重複計上する。合計は実際の消費より大きく出る（実測: 合計 12,301 MB に対し、OS 報告の使用中は 15,013 MB。共有分と非プロセス領域で差が出る）</li>
+<li><strong>回収できる正確な量</strong>。「終了すれば N MB 空く」は上限の目安として書く</li>
+</ul>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch10" id="ch10">
+<h1>ログの保管と圧縮</h1>
+
+<h2>やること</h2>
+<p>日単位のフォルダの<strong>更新日時が 1 週間以上前</strong>になったら 7z にまとめ、元のフォルダを削除する。夜間にタスクスケジューラで自動実行する。</p>
+
+<pre><code class="language-text">logs/2026/202609/20260905/     ← 7 日以上前になったら
+logs/2026/202609/20260905.7z   ← こうして、フォルダは消す</code></pre>
+
+<p>7z は日フォルダと同じ階層（月フォルダの中）に置く。年・月の階層はそのまま残す。</p>
+
+<h2>圧縮率と所要時間</h2>
+<p>2026-09-05 のログ 4 ファイル 3,457,415 バイトで実測した。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>圧縮レベル</th><th>圧縮後</th><th>比率</th><th>所要時間</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">-mx=1</td><td class="num">350,777 バイト</td><td class="num">10.1%</td><td class="num">0.12 秒</td></tr>
+<tr><td class="nowrap">-mx=5（採用）</td><td class="num">155,130 バイト</td><td class="num">4.5%</td><td class="num">0.37 秒</td></tr>
+<tr><td class="nowrap">-mx=9</td><td class="num">135,462 バイト</td><td class="num">3.9%</td><td class="num">0.48 秒</td></tr>
+</tbody>
+</table></div>
+
+<p>同じ日のレポートは構造も内容もよく似ているため、まとめると 20 分の 1 以下になる。<strong>-mx=9 にしても 0.6 ポイントしか縮まない</strong>ので、既定の -mx=5 を使う。</p>
+
+<h2>判定はフォルダの更新日時で行う</h2>
+<p>対象は <code>logs</code> 配下の <code>yyyymmdd</code> という名前のフォルダで、<code>LastWriteTime</code> が 7 日以上前のもの。フォルダ名の日付ではなく更新日時を見る。</p>
+
+<h3>展開しても、また圧縮される</h3>
+<p>7z はフォルダのタイムスタンプを保存し、展開時に復元する。実測では、更新日時を 2026-01-01 にしたフォルダを圧縮・削除・展開したところ、展開後も 2026-01-01 のまま復元された。<strong>中を見るために展開しても、次の夜にまた圧縮・削除される。</strong></p>
+
+<div class="callout"><strong>フォルダ自体をアーカイブに含めて圧縮する。</strong>中身だけを対象にするとフォルダのタイムスタンプがアーカイブに入らず、展開したときの更新日時が「いま」になる。そうなると 7 日経つまで再圧縮されず、上の挙動が成り立たなくなる。</div>
+
+<h2>手順</h2>
+<ol>
+<li><code>logs</code> を再帰的に探し、<code>yyyymmdd</code> 形式のフォルダのうち更新日時が 7 日以上前のものを集める</li>
+<li>7z で圧縮する（<code>-t7z -mx=5</code>）</li>
+<li><strong><code>7z t</code> で検査する</strong></li>
+<li>検査が通ったときだけ元のフォルダを削除する</li>
+<li>処理した件数と削減量を標準出力に書く</li>
+</ol>
+
+<div class="callout"><strong>検査に通らなければ削除しない。</strong>圧縮に失敗しているのにフォルダを消すと、記録が丸ごと失われる。圧縮 → 検査 → 削除の順を崩さない。</div>
+
+<h2>既に 7z がある場合は上書きする</h2>
+<p>展開して中を見たあと、次の夜に再圧縮するときは同名の 7z が既にある。<strong>そのまま上書きする。</strong>フォルダの中身が正であり、展開後に足したファイルも含めて圧縮される。中身を意図的に減らした場合もその状態が保たれる。</p>
+
+<h2>7z が見つからないとき</h2>
+<p><code>7z.exe</code> を PATH → <code>Program Files\7-Zip</code> → <code>Program Files (x86)\7-Zip</code> の順に探す。見つからなければ<strong>何もせずに警告を出して終わる</strong>。zip へのフォールバックはしない。形式が混ざると後から扱いに困る。</p>
+
+<h2>前回との比較への影響</h2>
+<p>圧縮されるのは 7 日以上前のものなので、<a href="#ch07">7 章</a>の比較で使う直近の JSON は通常そのまま残っている。</p>
+<p><strong>7z の中は探さない。</strong>1 週間以上あけて実行した場合は比較対象が見つからず「初回」として扱う。中を見たければ手で展開すればよく、そのために処理を複雑にしない。</p>
+
+<h2>実行方法</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">tools/80_ops/archive-old-logs.ps1</td><td>圧縮の本体</td></tr>
+<tr><td class="nowrap">tools/80_ops/archive-old-logs.cmd</td><td>手で実行するときのランチャー</td></tr>
+<tr><td class="nowrap">tools/80_ops/register-archive-task.ps1</td><td>タスクスケジューラへの登録</td></tr>
+<tr><td class="nowrap">tools/80_ops/register-archive-task.cmd</td><td>同上のランチャー</td></tr>
+</tbody>
+</table></div>
+
+<ul>
+<li>実行時刻の既定は深夜 3 時。<code>-At</code> で変えられるようにする</li>
+<li>登録はユーザー単位のタスクにする。管理者権限は要らない（自分のファイルを触るだけ）</li>
+<li><strong>subst ドライブの問題がここにも出る。</strong>タスクスケジューラは別のログオンセッションで動くため <code>N:</code> が見えない。登録時に実体パスへ直しておく（<a href="#ch05">5 章</a>の <code>Resolve-SubstPath</code> を使う）</li>
+<li>何度実行しても結果は同じ。圧縮済みのフォルダはもう存在しないため、二重に処理されない</li>
+</ul>
+
+<h2>7z 自体は消さない</h2>
+<p>1 日あたり 155 KB 程度で、5 年ためても数百 MB に収まる。保持期間の管理は作らない。</p>
+
+</section>
+
+<!-- ============================================================ -->
+<section class="ch11" id="ch11">
+<h1>実装の段取り</h1>
+
+<h2>済んでいるもの</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>やったこと</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td>収集・突き合わせ・親子関係の組み立て</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td>実行内容の日本語化（辞書・サービス名・引数の解析）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td>5 章構成の HTML 出力・SVG グラフ 3 点</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td>ローカル固有情報の置き換え</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td>管理者権限への自己昇格・subst ドライブの解決</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td>表の行間を詰める</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+</tbody>
+</table></div>
+
+<h2>これからやること</h2>
+<p>1 点ずつ実装し、各段階で全体を再生成して確認する。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>触る場所</th><th>確認方法</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>カテゴリ分類の辞書とマッピング関数を追加</td><td class="nowrap">ps1（辞書部）</td><td>6 カテゴリの合計が総計と一致するか</td></tr>
+<tr><td class="num">2</td><td>JSON 出力の追加（差分比較と AI の考察の土台になるため先に作る）</td><td class="nowrap">ps1（書き出し部）</td><td>読み戻して件数・合計が HTML と一致するか</td></tr>
+<tr><td class="num">3</td><td>所見の生成ロジック（しきい値判定・除外リスト）</td><td class="nowrap">ps1（新関数）</td><td>実測値で期待どおりの判定が出るか</td></tr>
+<tr><td class="num">4</td><td>前回との差分計算（同定・全体・カテゴリ別・継続の増減）</td><td class="nowrap">ps1（新関数）</td><td>2 回続けて実行し、差分の件数が実際と合うか。前回が無い場合に「初回」と出るか</td></tr>
+<tr><td class="num">5</td><td>1 章「結論と所見」を追加（前回からの変化・AI の考察の枠を含む）</td><td class="nowrap">ps1（HTML 組み立て）</td><td>ブラウザ表示・コントラスト検証</td></tr>
+<tr><td class="num">6</td><td>3 章「内訳の分析」＋カテゴリ別の積み上げ SVG</td><td class="nowrap">ps1（SVG 関数）</td><td>幅の合計が 100% になるか</td></tr>
+<tr><td class="num">7</td><td>4 章「気になる兆候」</td><td class="nowrap">ps1</td><td>除外リストが効いているか</td></tr>
+<tr><td class="num">8</td><td>5 章「起動の時系列」＋ヒストグラム SVG</td><td class="nowrap">ps1（SVG 関数）</td><td>起動直後の山が出るか</td></tr>
+<tr><td class="num">9</td><td>章の並べ替えと色相の振り直し（8 章・刻み 40°）</td><td class="nowrap">ps1（CSS・目次）</td><td>目次バッジと章見出しの色が一致するか</td></tr>
+<tr><td class="num">10</td><td>古いログの 7z 圧縮（<a href="#ch10">10 章</a>）</td><td class="nowrap">archive-old-logs.ps1 ＋ cmd</td><td>更新日時を過去にしたフォルダで、圧縮 → 検査 → 削除が通るか。展開して再実行しても同じ結果になるか</td></tr>
+<tr><td class="num">11</td><td>タスクスケジューラへの登録</td><td class="nowrap">register-archive-task.ps1 ＋ cmd</td><td>登録されたタスクのパスが実体パスになっているか。手動実行で動くか</td></tr>
+</tbody>
+</table></div>
+
+<h2>この計画でやらないこと</h2>
+<ul>
+<li><strong>定期実行</strong>。タスクスケジューラへの登録や常駐の仕組みは作らない。JSON の形式だけ将来に耐える形にしておく（<a href="#ch07">7 章</a>）</li>
+<li><strong>3 回以上の傾向分析</strong>。今回は前回 1 件との比較まで。連続した記録から傾向を出すのは定期実行が動いてから</li>
+<li><strong>7z の保持期間の管理</strong>。圧縮までは作るが、古い 7z を捨てる仕組みは作らない（<a href="#ch10">10 章</a>）</li>
+<li><strong>プロセスの操作</strong>。終了・優先度変更などレポートから実行する機能は持たせない。読むだけに徹する</li>
+</ul>
+
+</section>
+
+</div>
+
+<footer>
+プロセスメモリ調査 ／ 計画: ツールの仕様と出力構成
+</footer>
+
+</body>
+</html>
