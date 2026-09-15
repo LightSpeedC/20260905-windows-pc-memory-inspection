@@ -55,6 +55,7 @@ if not exist "%REPORT%" (
 )
 
 echo 考察を追記します: %REPORT%
+echo この処理は数分（実測で5分程度）かかることがあります。画面に何も出なくても止まっていません。そのままお待ちください。
 claude -p "%REPORT% に考察を追加して"
 
 :end

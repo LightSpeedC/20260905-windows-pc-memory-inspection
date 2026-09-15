@@ -1,0 +1,358 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>考察の観点ファイル化とモデル指定 — 計画</title>
+<style>
+	:root{
+		--navy1:#12224d; --navy2:#2f5fbf;
+		--ink:#1c2330; --ink-soft:#4a5568; --line:#d9dfe8; --code-bg:#f4f6fa;
+		--link:#1a4fa0;
+		--accent:#12224d; --accent2:#2f5fbf; --soft:#f2f5fb;
+	}
+	.ch01{--accent:hsl(280,78%,25%);--accent2:hsl(280,58%,55%);--soft:hsl(280,28%,95%);}
+	.ch02{--accent:hsl(224,78%,25%);--accent2:hsl(224,58%,55%);--soft:hsl(224,28%,95%);}
+	.ch03{--accent:hsl(168,78%,25%);--accent2:hsl(168,58%,55%);--soft:hsl(168,28%,95%);}
+	.ch04{--accent:hsl(112,78%,25%);--accent2:hsl(112,58%,55%);--soft:hsl(112,28%,95%);}
+	.ch05{--accent:hsl(56,78%,25%);--accent2:hsl(56,58%,55%);--soft:hsl(56,28%,95%);}
+	.ch06{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
+
+	*{box-sizing:border-box;}
+	body{margin:0;background:#fff;color:#1c2330;
+		font-family:"Yu Gothic UI","Meiryo","Segoe UI",system-ui,sans-serif;
+		font-size:15.5px;line-height:1.85;}
+
+	.titlebar{background:linear-gradient(135deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));color:#fff;padding:34px 30px 30px;}
+	.titlebar .inner{max-width:1600px;margin:0 auto;}
+	.titlebar h1{font-size:1.9em;margin:0 0 8px;color:#fff;}
+	.titlebar .lead{font-size:.92em;color:#dde6f7;background:transparent;}
+	.titlebar .date{font-size:.88em;color:#c9d8f2;background:transparent;margin-top:6px;}
+
+	.wrap{max-width:1600px;margin:0 auto;padding:0 30px;}
+
+	a{color:var(--link,#1a4fa0);background:transparent;}
+
+	.toc{margin:26px 0 0;}
+	.toc ol{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:12px 0 0;counter-reset:tocn;}
+	.toc li{counter-increment:tocn;}
+	.toc a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+		text-overflow:ellipsis;white-space:normal;width:310px;max-width:100%;
+		background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:700;font-size:.92em;}
+	.toc a::before{content:counter(tocn) ". ";font-weight:700;}
+
+	section{background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border:1px solid var(--line,#d9dfe8);border-radius:10px;padding:4px 26px 26px;margin:34px 0;}
+	section h1{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:14px 20px;margin:26px 0 20px;border-radius:8px;
+		box-shadow:0 3px 10px rgba(18,34,77,.22);font-size:1.4em;}
+	h2{background:linear-gradient(90deg,var(--soft,#f2f5fb),#fff);color:var(--accent,#12224d);
+		border-left:6px solid var(--accent,#12224d);padding:6px 12px;margin:30px 0 12px;
+		font-size:1.12em;border-radius:0 6px 6px 0;}
+	h3{display:inline-block;color:var(--accent,#12224d);background:transparent;
+		border-bottom:2px dotted var(--accent2,#2f5fbf);padding-bottom:3px;margin:20px 0 8px;font-size:1em;}
+	p{background:transparent;color:var(--ink,#1c2330);}
+
+	.tablewrap{overflow-x:auto;margin:12px 0;}
+	table{border-collapse:collapse;width:100%;background:#fff;color:var(--ink,#1c2330);
+		border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(18,34,77,.10);font-size:.92em;
+		line-height:1.5;}
+	th{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:6px 11px;text-align:left;white-space:nowrap;font-weight:700;}
+	td{padding:6px 11px;border-bottom:1px solid var(--line,#d9dfe8);vertical-align:top;
+		background:transparent;color:var(--ink,#1c2330);}
+	tr:nth-child(even) td{background:#fafbfe;color:var(--ink,#1c2330);}
+	td.num{text-align:right;white-space:nowrap;}
+	td.nowrap{white-space:nowrap;}
+
+	.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.82em;font-weight:700;
+		white-space:nowrap;color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+	.b-ok{color:#fff;background:linear-gradient(100deg,#1d7a3c,#45b56c);}
+	.b-ng{color:#fff;background:linear-gradient(100deg,#a51f22,#e05a5c);}
+	.b-warn{color:#fff;background:linear-gradient(100deg,#b8620a,#f0a548);}
+	.b-none{color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+
+	.callout{border-left:6px solid var(--accent,#12224d);
+		background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+	.callout strong{color:var(--accent,#12224d);background:transparent;}
+
+	code{background:var(--code-bg,#f4f6fa);border:1px solid var(--line,#d9dfe8);color:#17335f;
+		padding:1px 5px;border-radius:4px;font-size:.92em;
+		font-family:Consolas,"Courier New",monospace;}
+	pre{background:#fff;color:var(--ink,#1c2330);border:1px solid var(--line,#d9dfe8);
+		border-left:5px solid var(--accent2,#2f5fbf);border-radius:0 8px 8px 0;
+		padding:13px 16px;overflow-x:auto;font-size:.9em;line-height:1.6;
+		font-family:Consolas,"Courier New",monospace;}
+	pre code{background:transparent;border:none;color:var(--ink,#1c2330);padding:0;}
+
+	ul,ol{background:transparent;color:var(--ink,#1c2330);}
+
+	footer{max-width:1600px;margin:40px auto 0;padding:18px 30px 0;
+		border-top:1px solid var(--line,#d9dfe8);color:var(--ink-soft,#4a5568);
+		background:#fff;font-size:.88em;}
+
+	.back-home{display:inline-block;padding:6px 10px;border-radius:8px;
+		background:linear-gradient(100deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));
+		color:#fff;text-decoration:none;line-height:0;}
+</style>
+</head>
+<body>
+
+<div class="titlebar"><div class="inner">
+<h1>考察の観点ファイル化とモデル指定 — 計画</h1>
+<div class="lead"><code>claude -p</code> による考察（ch06）を、モデル・思考の深さを選べるようにし、着目点を外部ファイルで増減できるようにする</div>
+<div class="date">📅 作成: 2026-09-15 / 更新: 2026-09-15</div>
+</div></div>
+
+<div class="wrap">
+
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+
+<nav class="toc">
+<ol>
+<li class="ch01"><a href="#ch01">この計画について</a></li>
+<li class="ch02"><a href="#ch02">いまの状態</a></li>
+<li class="ch03"><a href="#ch03">作るもの</a></li>
+<li class="ch04"><a href="#ch04">手順</a></li>
+<li class="ch05"><a href="#ch05">決めておくこととリスク</a></li>
+<li class="ch06"><a href="#ch06">最新レポートを開く cmd</a></li>
+</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>この計画について</h1>
+
+<h2>目的</h2>
+<p><code>inspect-process-memory.cmd</code> が呼ぶ <code>claude -p</code> の考察（ch06）について、次の4点を可能にする。</p>
+<ul>
+<li>モデル・思考の深さ（effort）を、実行のたびに指定できる</li>
+<li>指定したモデル・effort を、実行時の画面に表示する</li>
+<li>「何に着目して調べるか」を外部ファイルに持たせ、コードを直さずに増減できるようにする</li>
+<li>最新のレポートを見つけて開くだけの、root 用の別 cmd を用意する</li>
+</ul>
+
+<h2>きっかけ</h2>
+<p>課題 <a href="../40_issues/issues.html">i260913-01</a> の「やること」に、<strong>ch06 の作り方が資料として書かれていない</strong>という指摘が残っている。今回の「着目点を外部ファイルに置く」は、この指摘への対応も兼ねる。あわせて、手動実行時に検討モデルを一時的に変えたい（既定は変えず、引数で上書きしたい）という要望が出た。</p>
+
+<h2>この計画でやらないこと</h2>
+<ul>
+<li><strong>登録済みタスクが実際に渡す引数（<code>nopause noai</code>）は変えない。</strong>root の cmd を経由する形に変えるが、既定で渡る引数の中身は今までと同じにする</li>
+<li><strong><code>noai</code> を外す判断はしない。</strong>i260913-01 の「やること」5〜6番として残す</li>
+<li><strong>着目点ファイルの中身（実際にどの観点を入れるか）を、この計画で確定させない。</strong>枠組みだけを作り、中身は運用しながら増減する前提にする</li>
+<li><strong>最新レポートを開く cmd を、タスクスケジューラへ新規登録しない。</strong>cmd 本体を用意するところまでとし、登録は別途の指示を待つ</li>
+</ul>
+</section>
+
+<section class="ch02" id="ch02">
+<h1>いまの状態</h1>
+
+<h2>いまの呼び出し</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>いまの形</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">呼び出し</td><td><code>claude -p "%REPORT% に考察を追加して"</code></td></tr>
+<tr><td class="nowrap">モデル</td><td>指定なし（アカウントの既定）</td></tr>
+<tr><td class="nowrap">effort</td><td>指定なし（既定）</td></tr>
+<tr><td class="nowrap">着目点</td><td>指示文の中に無い。何を見るかは実行のたびに claude 側の判断に委ねられている</td></tr>
+</tbody>
+</table></div>
+
+<h2>確認済みの CLI オプション</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>オプション</th><th>値</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>--model &lt;model&gt;</code></td><td>エイリアス（<code>sonnet</code> ・ <code>opus</code> ・ <code>fable</code>）かフルネーム</td><td><code>claude --help</code> で確認済み</td></tr>
+<tr><td class="nowrap"><code>--effort &lt;level&gt;</code></td><td><code>low</code> ・ <code>medium</code> ・ <code>high</code> ・ <code>xhigh</code> ・ <code>max</code></td><td><code>claude --help</code> で確認済み</td></tr>
+</tbody>
+</table></div>
+
+<h2>既存の引数の作り</h2>
+<p><code>inspect-process-memory.cmd</code> は <code>nopause</code> ・ <code>noai</code> という**裸の語**を引数に取る作りで、<code>key=value</code> 形式の引数はまだ無い。今回 <code>model=</code> ・ <code>effort=</code> を初めて足す。</p>
+</section>
+
+<section class="ch03" id="ch03">
+<h1>作るもの</h1>
+
+<h2>1. 引数 <code>model=</code> ・ <code>effort=</code></h2>
+<div class="tablewrap"><table>
+<thead><tr><th>引数</th><th>省略時</th><th>渡し方</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>model=&lt;名前&gt;</code></td><td><code>--model</code> を付けない（アカウント既定のまま）</td><td><code>claude --model &lt;名前&gt; --effort &lt;値&gt; -p "..."</code></td></tr>
+<tr><td class="nowrap"><code>effort=&lt;値&gt;</code></td><td><code>--effort</code> を付けない（既定のまま）</td><td>同上</td></tr>
+</tbody>
+</table></div>
+<p>使い方の例: <code>inspect-process-memory.cmd nopause model=sonnet effort=high</code></p>
+
+<h2>2. 実行時の表示</h2>
+<p><code>claude -p</code> を呼ぶ直前に、選んだ内容を1行で表示する。<strong>あわせて、観点ファイルの中身もそのまま画面に出す。</strong>その回の考察が何を踏まえて書かれるのかを、実行した本人がその場で確認できるようにする。</p>
+
+<div class="callout callout-important">
+<strong><code>type</code> は使わない。</strong>観点ファイルは Markdown の慣例どおり BOM 無し UTF-8 で作る予定だが、<code>type</code> はコンソールの既定コードページ（日本語 Windows では SJIS）でバイト列を解釈するため、UTF-8 の日本語は文字化けする。</div>
+
+<p><strong>今回採用するのは node 版。</strong></p>
+<pre><code class="language-batch">echo モデル: sonnet（指定） / effort: high（指定）
+echo モデル: 既定 / effort: 既定　（どちらも省略した場合）
+echo ---- 観点ファイルの内容 ----
+node -p "fs.readFileSync('inspect-process-memory-observations.md').toString()"
+echo -----------------------------</code></pre>
+<p><code>node -p</code>（<code>-e</code>・REPL も同様）では <code>fs</code> が <code>require</code> 無しでそのまま使える。<code>readFileSync(...).toString()</code> は既定で UTF-8 として文字列化するため、<code>'utf8'</code> を明示しなくてよい。バイト単位で正しい UTF-8 が出ることは実測で確認済み。この時点でカレントは既にプロジェクト直下（上の方で <code>cd /d</code> 済み）のため、観点ファイルは相対パスでそのまま参照できる。</p>
+
+<div class="callout callout-important">
+<strong>コードページの実測値は、この検証環境（このセッションが動いている PC）のもの。</strong>実行前からコードページ 65001（UTF-8）で、<code>chcp</code> を挟まなくても <code>node -p</code> は正しく表示された。<strong>ただし実際に運用するPCは別の機体で、コードページが CP932 である可能性がある。</strong>共通ルール「検証環境の状態を過信しない」のとおり、この結果を運用機にそのまま当てはめない。<strong>実機での確認は利用者が別途行う。</strong></div>
+
+<h3>参考: PowerShell 版</h3>
+<p>コンソールの出力コードページを自分で UTF-8 に切り替えたうえで読む形。実測で確認済み（<code>[Console]::OutputEncoding</code> を UTF-8 にしたうえで <code>[System.IO.File]::ReadAllText()</code> で読むと正しく表示される）。<code>Get-Content</code> 単体は共通ルール「PowerShellの落とし穴」のとおり BOM 無し UTF-8 を CP932 として読んでしまうため使わない。</p>
+<pre><code class="language-batch">powershell -NoProfile -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; [System.IO.File]::ReadAllText('inspect-process-memory-observations.md')"</code></pre>
+<p>今回は採用しないが、node が使えない環境に持って行くときの代替として残す。</p>
+
+<h2>3. 着目点ファイル</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">置き場</td><td>プロジェクト直下 <code>inspect-process-memory-observations.md</code>（<strong>root</strong>。下の「4. root の起動用 cmd」と同じ階層に置き、直しやすくする）</td></tr>
+<tr><td class="nowrap">形式</td><td>Markdown の箇条書き。人が増減する前提の、ただの一覧</td></tr>
+<tr><td class="nowrap">中身</td><td>ch06 の章構成（いまの状態／前回との比較／区分ごとの内訳／気になった点／次に見るとよいところ）と、個別に気にする観点（例: node・bun のコマンドライン、claude のコマンドライン・ウィンドウタイトル、codex 系のプロセス）を挙げておく</td></tr>
+<tr><td class="nowrap">呼び出し方</td><td><code>claude -p</code> の指示文はこのファイルへの<strong>ポインタだけ</strong>にする。指示文そのものに手順を書き写さない（共通ルール「手順は1箇所に置く」）</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout">
+<strong>指示文の形。</strong><code>"%REPORT% に、inspect-process-memory-observations.md の内容を踏まえて考察（ch06）を追加して"</code> のように、ファイルを踏まえるよう一言添えるだけにする。章構成の詳細・観点の中身はファイル側だけに書く。</div>
+
+<h2>4. root の起動用 cmd（タスクの再登録が要らないようにする）</h2>
+<p>プロジェクト直下に、タスクスケジューラが直接指す<strong>司令塔役の cmd を1本</strong>置く（<code>run-inspect-process-memory.cmd</code>）。中身は <code>tools/80_ops/inspect-process-memory.cmd</code> を呼ぶだけで、<strong>渡す引数（<code>nopause</code> ・ <code>noai</code> ・ 今後の <code>model=</code> 等）は変数として1行にまとめる。</strong></p>
+<pre><code class="language-batch">@echo off
+rem タスクスケジューラはこのファイルを指す。
+rem 実行内容を変えたいときは、この DEFAULT_ARGS の1行だけを直せばよい。
+rem タスクの再登録は不要（Command が指す先はこのファイルのまま変わらないため）。
+set "DEFAULT_ARGS=nopause noai"
+call "%~dp0tools\80_ops\inspect-process-memory.cmd" %DEFAULT_ARGS% %*</code></pre>
+<p><strong>手動での個別テストは、この root の cmd を経由せず、<code>tools/80_ops/inspect-process-memory.cmd</code> を直接、好きな引数で呼ぶ。</strong>root の cmd は「タスクスケジューラが何を実行するか」だけの置き場にする。</p>
+
+<h2>5. タスクの再登録（<code>Command</code> の向き先を変える）</h2>
+<p>登録済みタスクの <code>Command</code> を、今の <code>tools/80_ops/inspect-process-memory.cmd</code>（実体パス）から、新しい root の <code>run-inspect-process-memory.cmd</code>（実体パス）へ変更する。<strong>トリガー（6時間ごと）・実行アカウント（S4U）・その他の設定は変えない。</strong><code>Set-ScheduledTask -Action</code> で action だけを差し替える形にする。</p>
+
+<div class="callout callout-important">
+<strong>etc/ の控え・tools/ の雛形が古くなる。</strong>課題 i260908-03 で作った <code>etc/ai-pc-inspect-process-memory.xml</code>（実値の控え）と <code>tools/80_ops/ai-pc-inspect-process-memory.xml</code>（雛形）は、いまの <code>Command</code>（<code>tools/80_ops/inspect-process-memory.cmd</code> を直接指す）を記録したものである。<code>Command</code> を変えたら、この2つも新しい内容（root の cmd を指す形）へ更新しないと、実際の登録内容とずれる。</div>
+
+<h2>6. ch06 の作り方を資料にする（i260913-01 の課題への対応）</h2>
+<p>3番の観点ファイルが、そのまま「ch06 の作り方を資料として書く」（i260913-01 のやること 3番）を満たす形にする。これまでこのセッションで積み重ねてきた形式（いまの状態／前回との比較／区分ごとの内訳／気になった点／次に見るとよいところ、章数に応じた色相の振り直し等）を書き写す。</p>
+</section>
+
+<section class="ch04" id="ch04">
+<h1>手順</h1>
+
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>確かめること</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>観点ファイル（root の <code>inspect-process-memory-observations.md</code>）を作る</td><td>ch06 のこれまでの形式・挙げられた観点が過不足なく入っている</td></tr>
+<tr><td class="num">2</td><td><code>tools/80_ops/inspect-process-memory.cmd</code> に <code>model=</code> ・ <code>effort=</code> の引数解析を足す</td><td>両方・片方・どちらも無し、の3パターンで意図どおりの <code>claude</code> 呼び出しになる</td></tr>
+<tr><td class="num">3</td><td>実行前の表示メッセージを足す</td><td>指定時・既定時それぞれの表示を目視確認</td></tr>
+<tr><td class="num">4</td><td><code>claude -p</code> の指示文を、観点ファイルへのポインタに直す</td><td>指示文に手順そのものを書いていないこと</td></tr>
+<tr><td class="num">5</td><td>root の起動用 <code>run-inspect-process-memory.cmd</code> を作る</td><td><code>tools/80_ops/inspect-process-memory.cmd</code> を正しく呼べる（subst 経由・実体パス経由の両方）</td></tr>
+<tr><td class="num">6</td><td>SJIS ＋ CRLF へ変換（2ファイルとも）</td><td><code>convert-encoding --to cmd</code> の前後で内容が壊れていない</td></tr>
+<tr><td class="num">7</td><td>手動で root の cmd を実行して確認する</td><td>タスクと同じ引数（<code>nopause noai</code>）で、これまでどおり動く</td></tr>
+<tr><td class="num">8</td><td>手動で <code>tools/80_ops/inspect-process-memory.cmd</code> を直接、<code>model=</code>・<code>effort=</code> 付きで実行して確認する</td><td>指定したモデル・effort で動いたか、観点ファイルの内容が考察に反映されたか</td></tr>
+<tr><td class="num">9</td><td>登録済みタスクの <code>Command</code> を root の cmd（実体パス）へ差し替える</td><td><code>Get-ScheduledTask</code> でトリガー・実行アカウントが変わっていないことを確認</td></tr>
+<tr><td class="num">10</td><td><code>etc/</code> の控えと <code>tools/</code> の雛形（<code>ai-pc-inspect-process-memory.xml</code>）を、新しい <code>Command</code> の内容に更新する</td><td>実際の登録内容と一致する</td></tr>
+<tr><td class="num">11</td><td>次の定期実行（6時間以内）で、新しい <code>Command</code> のとおりに動くことを確認する</td><td><code>logs/reports-admin.txt</code> に記録が増えている</td></tr>
+<tr><td class="num">12</td><td>課題 i260913-01 のやること 3番を済にする</td><td>実測してから書き換える</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section class="ch05" id="ch05">
+<h1>決めておくこととリスク</h1>
+
+<h2>決めること</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>案</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">引数の形</td><td><code>model=sonnet</code>（<code>key=value</code>）</td><td>既存の裸引数（<code>nopause</code>）と見分けが付き、cmd の文字列比較だけで判定できる</td></tr>
+<tr><td class="nowrap">観点ファイルの形式</td><td>Markdown・箇条書き</td><td>人が直接編集する前提のため、HTML の見た目の作法（色相・目次等）は不要。プレーンな一覧で十分</td></tr>
+<tr><td class="nowrap">観点ファイルの中身</td><td>この計画では確定させない</td><td>運用しながら増減する前提のため。初版は「気づいたものを書いておく」程度に留める</td></tr>
+<tr><td class="nowrap">root cmd の名前</td><td><code>run-inspect-process-memory.cmd</code></td><td>root にはこれから増えうる他のツールの起動用 cmd も並ぶ可能性があるため、対象が分かる名前にする</td></tr>
+<tr><td class="nowrap">タスクの差し替え方</td><td><code>Set-ScheduledTask -Action</code> で action だけ差し替える</td><td>トリガー・実行アカウント（S4U）等、他の設定に触れずに済む</td></tr>
+</tbody>
+</table></div>
+
+<h2>リスク</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>リスク</th><th>起きること</th><th>備え</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">存在しないモデル名・effort 値を渡す</td><td><code>claude</code> がエラーで終了する</td><td>手動実行のみが対象のため、実行者が画面のエラーで気づける。自動化はしない</td></tr>
+<tr><td class="nowrap">観点ファイルが肥大化する</td><td>読み込みに時間がかかる／考察が散漫になる</td><td>この計画の範囲外。運用しながら見直す</td></tr>
+<tr><td class="nowrap">cmd の引数解析ミス</td><td><code>model=</code> ・ <code>effort=</code> の値が正しく渡らない</td><td>手順8で3パターンを目視確認する</td></tr>
+<tr><td class="nowrap"><strong>タスクの差し替えを誤る</strong></td><td>次の定期実行が動かなくなる（<strong>取り返しがつきにくい</strong>。気づくのが最大6時間後になる）</td><td>手順9の直後に <code>Get-ScheduledTask</code> で内容を確認し、手順11で実際の実行結果まで確かめる。うまくいかなければ <code>Command</code> を元（<code>tools/80_ops/inspect-process-memory.cmd</code>）へ戻す</td></tr>
+<tr><td class="nowrap"><code>etc/</code>・雛形の更新漏れ</td><td>控えが実際の登録内容と食い違ったまま残る</td><td>手順10で明示的に更新する</td></tr>
+</tbody>
+</table></div>
+
+<div class="callout callout-caution">
+<strong>手順9（タスクの <code>Command</code> 差し替え）は、このプロジェクトで初めて登録済みタスクの中身に触れる操作である。</strong>これまでの計画（p260908-01）では「タスクの再登録はしない」を明言していたが、今回は利用者の指示により、その制約を外して実施する。</div>
+
+<h2>完了の条件</h2>
+<ul>
+<li><code>model=</code> ・ <code>effort=</code> を指定した実行と、指定しない実行の両方で意図どおり動く</li>
+<li>観点ファイルが root に存在し、<code>claude -p</code> の指示文がそこへのポインタになっている</li>
+<li>root の <code>run-inspect-process-memory.cmd</code> が存在し、登録済みタスクの <code>Command</code> がそれを指している</li>
+<li>次の定期実行が、新しい <code>Command</code> のとおりに動いたことを確認済み</li>
+<li><code>etc/</code>・雛形が新しい <code>Command</code> の内容と一致している</li>
+<li>課題 i260913-01 のやること 3番が済になる</li>
+<li><code>claude -p</code> を呼ぶ直前に、観点ファイルの中身が画面に表示される</li>
+</ul>
+</section>
+
+<section class="ch06" id="ch06">
+<h1>最新レポートを開く cmd</h1>
+
+<h2>目的</h2>
+<p>「今どうなっているか」を見るのに、<code>logs/</code> の中を辿らなくて済むようにする。<strong>最新の日付のレポートを見つけて開くだけ</strong>の、単純な cmd を root に用意する。手動で使うほか、<strong>ログオン中だけ動くタスク（S4U ではない、通常のログオン時実行）として登録する</strong>使い方も想定する。</p>
+
+<h2>作るもの</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">置き場</td><td>プロジェクト直下 <code>open-latest-report.cmd</code></td></tr>
+<tr><td class="nowrap">やること</td><td><code>logs/</code> 配下を再帰的に探し、名前が最も新しい（＝日付が最新の）<code>*-mem*-log.html</code> を既定のブラウザで開く。それだけ</td></tr>
+<tr><td class="nowrap">昇格・subst</td><td>どちらも不要。<code>%~dp0</code> からの相対探索のみで、実体パス・ドライブ表記のどちらで置かれていても動く</td></tr>
+</tbody>
+</table></div>
+
+<pre><code class="language-batch">@echo off
+setlocal enabledelayedexpansion
+set "LATEST="
+for /f "delims=" %%f in ('dir /b /s /a-d "%~dp0logs\*-mem*-log.html" 2^&gt;nul ^| sort /r') do (
+	if not defined LATEST set "LATEST=%%f"
+)
+if not defined LATEST (
+	echo レポートが見つかりませんでした。
+	pause
+	exit /b 1
+)
+start "" "%LATEST%"</code></pre>
+
+<div class="callout callout-important">
+<strong>検索式は <code>*-mem*-log.html</code> にする（<code>*-mem-*-log.html</code> ではない）。</strong>課題 i260908-02 で踏んだのと同じ落とし穴で、区分の付かない初期のファイル名（<code>...-mem-log.html</code>）を <code>*-mem-*-log.html</code> は拾えない。今回は「最新の1件」を探すだけなので実害は無いが、書き方は揃えておく。</div>
+
+<h2>決めたこと</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>決め</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">最新の見つけ方</td><td><code>reports-admin.txt</code> 等を読まず、<code>logs/</code> をファイル名で直接探す</td><td>admin・user どちらの記録にも依らず、フォルダの実体を正として扱えるため</td></tr>
+<tr><td class="nowrap">タスクへの登録</td><td>この計画ではしない</td><td>「この計画でやらないこと」を参照。cmd を用意するところまでとする</td></tr>
+</tbody>
+</table></div>
+</section>
+
+</div>
+
+<footer>
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+プロセスメモリ調査 ／ 計画: 考察の観点ファイル化とモデル指定
+</footer>
+
+</body>
+</html>

@@ -98,6 +98,10 @@
 	footer{max-width:1600px;margin:40px auto 0;padding:18px 30px 0;
 		border-top:1px solid var(--line,#d9dfe8);color:var(--ink-soft,#4a5568);
 		background:#fff;font-size:.88em;}
+
+	.back-home{display:inline-block;padding:6px 10px;border-radius:8px;
+		background:linear-gradient(100deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));
+		color:#fff;text-decoration:none;line-height:0;}
 </style>
 </head>
 <body>
@@ -109,6 +113,8 @@
 </div></div>
 
 <div class="wrap">
+
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 
 <nav class="toc">
 <ol>
@@ -276,6 +282,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <tr><td class="nowrap">権限確認で止まらないか</td><td><strong>止まらない。</strong><code>~/.claude/settings.json</code> の <code>permissions.defaultMode</code> が <code>auto</code> になっており、<code>--dangerously-skip-permissions</code> を付けなくても Edit ができることを、使い捨てファイルで確認した</td></tr>
 <tr><td class="nowrap"><code>logs/last-report.txt</code> の解決</td><td>正しく最新レポートを指していることを確認した</td></tr>
 <tr><td class="nowrap">Task Scheduler（S4U）から起動したときに <code>claude</code> が見つかるか</td><td><span class="badge b-none">未確認</span>。<code>claude</code> はユーザー PATH で解決しており、システム PATH には無い。S4U はユーザープロファイルを読み込む方式なので理屈のうえでは通るはずだが、実機のタスクから動かして確かめてはいない</td></tr>
+<tr><td class="nowrap">手動実行で「ハングする」という報告の原因</td><td><strong>ハングではなかった。</strong>実際の cmd と同じコマンドを 1 MB のレポートに対して実行したところ、<strong>5 分 36 秒かかり、その間は画面に一切出力が無かった。</strong>権限確認で止まっていたのではなく（<code>--dangerously-skip-permissions</code> 無しでも完了した）、進捗が見えないまま長く待たされる形になっていた。利用者は 3 分ほどで「止まった」と判断し、途中で消していた</td></tr>
 </tbody>
 </table></div>
 
@@ -294,8 +301,13 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <tr><td class="num">4</td><td><code>claude -p</code> の指示文を、その資料を参照する形に直す</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
 <tr><td class="num">5</td><td>登録済みタスクの <code>Arguments</code> から <code>noai</code> を外す</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
 <tr><td class="num">6</td><td>外した直後の 1 回で、実際に自動で動くかを確認する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">7</td><td>手動実行で「ハングする」という報告の原因を調べる</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">8</td><td>無出力のまま長く待たされることが分かる案内を <code>claude -p</code> の前に足す</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
 </tbody>
 </table></div>
+
+<h2>直した内容</h2>
+<p><code>tools/80_ops/inspect-process-memory.cmd</code> に 1 行。<code>claude -p</code> を呼ぶ直前に、処理に数分（実測 5 分 36 秒）かかること・無出力でも止まっていないことを知らせるメッセージを追加した。</p>
 </details>
 
 </section>
@@ -303,6 +315,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 </div>
 
 <footer>
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
 プロセスメモリ調査 ／ 課題: これから解決すること
 </footer>
 
