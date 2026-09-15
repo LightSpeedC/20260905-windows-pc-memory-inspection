@@ -169,21 +169,24 @@
 </table></div>
 
 <h2>既存の引数の作り</h2>
-<p><code>inspect-process-memory.cmd</code> は <code>nopause</code> ・ <code>noai</code> という**裸の語**を引数に取る作りで、<code>key=value</code> 形式の引数はまだ無い。今回 <code>model=</code> ・ <code>effort=</code> を初めて足す。</p>
+<p><code>inspect-process-memory.cmd</code> は <code>nopause</code> ・ <code>noai</code> という**裸の語**を引数に取る作りで、<code>key=value</code> 形式の引数はまだ無い。今回 <code>model:</code> ・ <code>effort:</code> を初めて足す。</p>
 </section>
 
 <section class="ch03" id="ch03">
 <h1>作るもの</h1>
 
-<h2>1. 引数 <code>model=</code> ・ <code>effort=</code></h2>
+<h2>1. 引数 <code>model:</code> ・ <code>effort:</code></h2>
 <div class="tablewrap"><table>
 <thead><tr><th>引数</th><th>省略時</th><th>渡し方</th></tr></thead>
 <tbody>
-<tr><td class="nowrap"><code>model=&lt;名前&gt;</code></td><td><code>--model</code> を付けない（アカウント既定のまま）</td><td><code>claude --model &lt;名前&gt; --effort &lt;値&gt; -p "..."</code></td></tr>
-<tr><td class="nowrap"><code>effort=&lt;値&gt;</code></td><td><code>--effort</code> を付けない（既定のまま）</td><td>同上</td></tr>
+<tr><td class="nowrap"><code>model:&lt;名前&gt;</code></td><td><code>--model</code> を付けない（アカウント既定のまま）</td><td><code>claude --model &lt;名前&gt; --effort &lt;値&gt; -p "..."</code></td></tr>
+<tr><td class="nowrap"><code>effort:&lt;値&gt;</code></td><td><code>--effort</code> を付けない（既定のまま）</td><td>同上</td></tr>
 </tbody>
 </table></div>
-<p>使い方の例: <code>inspect-process-memory.cmd nopause model=sonnet effort=high</code></p>
+<p>使い方の例: <code>inspect-process-memory.cmd nopause model:sonnet effort:high</code></p>
+
+<div class="callout callout-important">
+<strong>実装中に見つかった、計画との差分。</strong>当初は <code>model=sonnet</code>（<code>=</code> 区切り）で設計したが、実際に試したところ <code>model</code> と <code>sonnet</code> に割れて渡り、値が空のまま既定扱いになった。<strong>cmd は <code>=</code>（と <code>,</code> <code>;</code>）を、引用符が無い限りスペースと同じ引数区切りとして扱う。</strong>引用符で囲めば回避できるが、手打ちで毎回引用符を付けるのは現実的でないため、<strong>区切りを <code>:</code> に変更した。</strong>コロンなら引用符無しで正しく1つの引数として渡ることを実測で確認済み。</div>
 
 <h2>2. 実行時の表示</h2>
 <p><code>claude -p</code> を呼ぶ直前に、選んだ内容を1行で表示する。<strong>あわせて、観点ファイルの中身もそのまま画面に出す。</strong>その回の考察が何を踏まえて書かれるのかを、実行した本人がその場で確認できるようにする。</p>
@@ -222,7 +225,7 @@ echo -----------------------------</code></pre>
 <strong>指示文の形。</strong><code>"%REPORT% に、inspect-process-memory-observations.md の内容を踏まえて考察（ch06）を追加して"</code> のように、ファイルを踏まえるよう一言添えるだけにする。章構成の詳細・観点の中身はファイル側だけに書く。</div>
 
 <h2>4. root の起動用 cmd（タスクの再登録が要らないようにする）</h2>
-<p>プロジェクト直下に、タスクスケジューラが直接指す<strong>司令塔役の cmd を1本</strong>置く（<code>run-inspect-process-memory.cmd</code>）。中身は <code>tools/80_ops/inspect-process-memory.cmd</code> を呼ぶだけで、<strong>渡す引数（<code>nopause</code> ・ <code>noai</code> ・ 今後の <code>model=</code> 等）は変数として1行にまとめる。</strong></p>
+<p>プロジェクト直下に、タスクスケジューラが直接指す<strong>司令塔役の cmd を1本</strong>置く（<code>run-inspect-process-memory.cmd</code>）。中身は <code>tools/80_ops/inspect-process-memory.cmd</code> を呼ぶだけで、<strong>渡す引数（<code>nopause</code> ・ <code>noai</code> ・ 今後の <code>model:</code> 等）は変数として1行にまとめる。</strong></p>
 <pre><code class="language-batch">@echo off
 rem タスクスケジューラはこのファイルを指す。
 rem 実行内容を変えたいときは、この DEFAULT_ARGS の1行だけを直せばよい。
@@ -245,20 +248,20 @@ call "%~dp0tools\80_ops\inspect-process-memory.cmd" %DEFAULT_ARGS% %*</code></pr
 <h1>手順</h1>
 
 <div class="tablewrap"><table>
-<thead><tr><th>#</th><th>やること</th><th>確かめること</th></tr></thead>
+<thead><tr><th>#</th><th>やること</th><th>確かめること</th><th>状態</th></tr></thead>
 <tbody>
-<tr><td class="num">1</td><td>観点ファイル（root の <code>inspect-process-memory-observations.md</code>）を作る</td><td>ch06 のこれまでの形式・挙げられた観点が過不足なく入っている</td></tr>
-<tr><td class="num">2</td><td><code>tools/80_ops/inspect-process-memory.cmd</code> に <code>model=</code> ・ <code>effort=</code> の引数解析を足す</td><td>両方・片方・どちらも無し、の3パターンで意図どおりの <code>claude</code> 呼び出しになる</td></tr>
-<tr><td class="num">3</td><td>実行前の表示メッセージを足す</td><td>指定時・既定時それぞれの表示を目視確認</td></tr>
-<tr><td class="num">4</td><td><code>claude -p</code> の指示文を、観点ファイルへのポインタに直す</td><td>指示文に手順そのものを書いていないこと</td></tr>
-<tr><td class="num">5</td><td>root の起動用 <code>run-inspect-process-memory.cmd</code> を作る</td><td><code>tools/80_ops/inspect-process-memory.cmd</code> を正しく呼べる（subst 経由・実体パス経由の両方）</td></tr>
-<tr><td class="num">6</td><td>SJIS ＋ CRLF へ変換（2ファイルとも）</td><td><code>convert-encoding --to cmd</code> の前後で内容が壊れていない</td></tr>
-<tr><td class="num">7</td><td>手動で root の cmd を実行して確認する</td><td>タスクと同じ引数（<code>nopause noai</code>）で、これまでどおり動く</td></tr>
-<tr><td class="num">8</td><td>手動で <code>tools/80_ops/inspect-process-memory.cmd</code> を直接、<code>model=</code>・<code>effort=</code> 付きで実行して確認する</td><td>指定したモデル・effort で動いたか、観点ファイルの内容が考察に反映されたか</td></tr>
-<tr><td class="num">9</td><td>登録済みタスクの <code>Command</code> を root の cmd（実体パス）へ差し替える</td><td><code>Get-ScheduledTask</code> でトリガー・実行アカウントが変わっていないことを確認</td></tr>
-<tr><td class="num">10</td><td><code>etc/</code> の控えと <code>tools/</code> の雛形（<code>ai-pc-inspect-process-memory.xml</code>）を、新しい <code>Command</code> の内容に更新する</td><td>実際の登録内容と一致する</td></tr>
-<tr><td class="num">11</td><td>次の定期実行（6時間以内）で、新しい <code>Command</code> のとおりに動くことを確認する</td><td><code>logs/reports-admin.txt</code> に記録が増えている</td></tr>
-<tr><td class="num">12</td><td>課題 i260913-01 のやること 3番を済にする</td><td>実測してから書き換える</td></tr>
+<tr><td class="num">1</td><td>観点ファイル（root の <code>inspect-process-memory-observations.md</code>）を作る</td><td>ch06 のこれまでの形式・挙げられた観点が過不足なく入っている</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">2</td><td><code>tools/80_ops/inspect-process-memory.cmd</code> に <code>model:</code> ・ <code>effort:</code> の引数解析を足す</td><td>両方・片方・どちらも無し、の3パターンで意図どおりの <code>claude</code> 呼び出しになる</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">3</td><td>実行前の表示メッセージを足す</td><td>指定時・既定時それぞれの表示を目視確認</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">4</td><td><code>claude -p</code> の指示文を、観点ファイルへのポインタに直す</td><td>指示文に手順そのものを書いていないこと</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">5</td><td>root の起動用 <code>run-inspect-process-memory.cmd</code> を作る</td><td><code>tools/80_ops/inspect-process-memory.cmd</code> を正しく呼べる（subst 経由・実体パス経由の両方）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">6</td><td>SJIS ＋ CRLF へ変換（2ファイルとも）</td><td><code>convert-encoding --to cmd</code> の前後で内容が壊れていない</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">7</td><td>手動で root の cmd を実行して確認する</td><td>タスクと同じ引数（<code>nopause noai</code>）で、これまでどおり動く</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">8</td><td>手動で <code>tools/80_ops/inspect-process-memory.cmd</code> を直接、<code>model:</code>・<code>effort:</code> 付きで実行して確認する</td><td>指定したモデル・effort で動いたか、観点ファイルの内容が考察に反映されたか</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">9</td><td>登録済みタスクの <code>Command</code> を root の cmd（実体パス）へ差し替える</td><td><code>Get-ScheduledTask</code> でトリガー・実行アカウントが変わっていないことを確認</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">10</td><td><code>etc/</code> の控えと <code>tools/</code> の雛形（<code>ai-pc-inspect-process-memory.xml</code>）を、新しい <code>Command</code> の内容に更新する</td><td>実際の登録内容と一致する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">11</td><td>次の定期実行（6時間以内）で、新しい <code>Command</code> のとおりに動くことを確認する</td><td><code>logs/reports-admin.txt</code> に記録が増えている</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">12</td><td>課題 i260913-01 のやること 3番を済にする</td><td>実測してから書き換える</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
 </tbody>
 </table></div>
 </section>
@@ -270,7 +273,7 @@ call "%~dp0tools\80_ops\inspect-process-memory.cmd" %DEFAULT_ARGS% %*</code></pr
 <div class="tablewrap"><table>
 <thead><tr><th>論点</th><th>案</th><th>理由</th></tr></thead>
 <tbody>
-<tr><td class="nowrap">引数の形</td><td><code>model=sonnet</code>（<code>key=value</code>）</td><td>既存の裸引数（<code>nopause</code>）と見分けが付き、cmd の文字列比較だけで判定できる</td></tr>
+<tr><td class="nowrap">引数の形</td><td><code>model:sonnet</code>（<code>key:value</code>、<strong>コロン区切り</strong>）</td><td>既存の裸引数（<code>nopause</code>）と見分けが付く。<code>=</code> は cmd が既定でスペースと同じ引数区切りとして扱うため、引用符無しで <code>model=sonnet</code> と書くと <code>model</code> と <code>sonnet</code> に割れる。実装時に実際に踏み、コロンに変えて解決した（下記コラム参照）</td></tr>
 <tr><td class="nowrap">観点ファイルの形式</td><td>Markdown・箇条書き</td><td>人が直接編集する前提のため、HTML の見た目の作法（色相・目次等）は不要。プレーンな一覧で十分</td></tr>
 <tr><td class="nowrap">観点ファイルの中身</td><td>この計画では確定させない</td><td>運用しながら増減する前提のため。初版は「気づいたものを書いておく」程度に留める</td></tr>
 <tr><td class="nowrap">root cmd の名前</td><td><code>run-inspect-process-memory.cmd</code></td><td>root にはこれから増えうる他のツールの起動用 cmd も並ぶ可能性があるため、対象が分かる名前にする</td></tr>
@@ -284,7 +287,7 @@ call "%~dp0tools\80_ops\inspect-process-memory.cmd" %DEFAULT_ARGS% %*</code></pr
 <tbody>
 <tr><td class="nowrap">存在しないモデル名・effort 値を渡す</td><td><code>claude</code> がエラーで終了する</td><td>手動実行のみが対象のため、実行者が画面のエラーで気づける。自動化はしない</td></tr>
 <tr><td class="nowrap">観点ファイルが肥大化する</td><td>読み込みに時間がかかる／考察が散漫になる</td><td>この計画の範囲外。運用しながら見直す</td></tr>
-<tr><td class="nowrap">cmd の引数解析ミス</td><td><code>model=</code> ・ <code>effort=</code> の値が正しく渡らない</td><td>手順8で3パターンを目視確認する</td></tr>
+<tr><td class="nowrap">cmd の引数解析ミス</td><td><code>model:</code> ・ <code>effort:</code> の値が正しく渡らない</td><td>手順8で3パターンを目視確認する</td></tr>
 <tr><td class="nowrap"><strong>タスクの差し替えを誤る</strong></td><td>次の定期実行が動かなくなる（<strong>取り返しがつきにくい</strong>。気づくのが最大6時間後になる）</td><td>手順9の直後に <code>Get-ScheduledTask</code> で内容を確認し、手順11で実際の実行結果まで確かめる。うまくいかなければ <code>Command</code> を元（<code>tools/80_ops/inspect-process-memory.cmd</code>）へ戻す</td></tr>
 <tr><td class="nowrap"><code>etc/</code>・雛形の更新漏れ</td><td>控えが実際の登録内容と食い違ったまま残る</td><td>手順10で明示的に更新する</td></tr>
 </tbody>
@@ -295,7 +298,7 @@ call "%~dp0tools\80_ops\inspect-process-memory.cmd" %DEFAULT_ARGS% %*</code></pr
 
 <h2>完了の条件</h2>
 <ul>
-<li><code>model=</code> ・ <code>effort=</code> を指定した実行と、指定しない実行の両方で意図どおり動く</li>
+<li><code>model:</code> ・ <code>effort:</code> を指定した実行と、指定しない実行の両方で意図どおり動く</li>
 <li>観点ファイルが root に存在し、<code>claude -p</code> の指示文がそこへのポインタになっている</li>
 <li>root の <code>run-inspect-process-memory.cmd</code> が存在し、登録済みタスクの <code>Command</code> がそれを指している</li>
 <li>次の定期実行が、新しい <code>Command</code> のとおりに動いたことを確認済み</li>
