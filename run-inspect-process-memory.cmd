@@ -6,5 +6,5 @@ rem
 rem 手動で個別に試すときは、この cmd を経由せず
 rem tools\80_ops\inspect-process-memory.cmd を直接、好きな引数で呼ぶ。
 
-set "DEFAULT_ARGS=nopause noai"
+set "DEFAULT_ARGS=nopause"
 call "%~dp0tools\80_ops\inspect-process-memory.cmd" %DEFAULT_ARGS% %*

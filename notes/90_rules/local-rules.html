@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ローカルルール</title>
+<style>
+:root{--navy1:#12224d;--navy2:#2f5fbf;--ink:#1c2330;--ink-soft:#4a5568;--line:#d9dfe8;--code-bg:#f4f6fa;
+	--accent:#12224d;--accent2:#2f5fbf;--soft:#f2f5fb;}
+body{margin:0;background:#f6f8fb;color:var(--ink);font-family:"Yu Gothic UI","Meiryo",sans-serif;
+	font-size:15.5px;line-height:1.85;}
+.titlebar{background:linear-gradient(135deg,var(--navy1),var(--navy2));color:#fff;padding:34px 30px 30px;}
+.titlebar .inner{max-width:1600px;margin:0 auto;}
+.titlebar h1{margin:0;font-size:1.9em;}
+.titlebar .lead{margin-top:8px;font-size:.9em;color:#dbe4f5;}
+.wrap{max-width:1600px;margin:0 auto;padding:0 30px;}
+section{background:linear-gradient(180deg,var(--soft),#fff);border-radius:8px;
+	padding:4px 26px 26px;margin:34px 0;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+section h1{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+	color:#fff;padding:14px 20px;margin:26px 0 20px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+h2{border-left:6px solid var(--accent,#12224d);background:var(--soft,#f2f5fb);
+	padding:6px 12px;margin:30px 0 12px;}
+h3{border-bottom:2px dotted var(--accent2,#2f5fbf);display:inline-block;padding-bottom:3px;margin:20px 0 8px;}
+code{background:var(--code-bg);border:1px solid var(--line);color:#17335f;padding:1px 5px;border-radius:3px;}
+pre{background:var(--code-bg);border-left:5px solid var(--accent2,#2f5fbf);padding:13px 16px;
+	overflow-x:auto;}
+a{color:#1a4fa0;}
+.callout{border-left:6px solid var(--accent,#12224d);background:linear-gradient(180deg,var(--soft),#fff);
+	border-radius:0 8px 8px 0;padding:10px 16px;margin:16px 0;}
+.callout strong{color:var(--accent,#12224d);}
+footer{padding:18px 30px 30px;max-width:1600px;margin:0 auto;color:var(--ink-soft);font-size:.85em;}
+</style>
+</head>
+<body>
+<div class="titlebar"><div class="inner">
+<h1>ローカルルール</h1>
+<div class="lead">📅 作成: 2026-09-21 / 更新: 2026-09-21</div>
+</div></div>
+<div class="wrap">
+
+<section>
+<h1>結論と所見（ch06）の視覚化</h1>
+<p>共通ルールの「HTMLデザインルール」を、このプロジェクトのレポート（<code>logs/</code> 配下の
+<code>*-mem-admin-log.html</code>）の ch06「結論と所見」に限って上書きする。理由は、ch06 は数値の
+大小比較が主目的で、共通ルールが想定する読み物用の図（SVG図・callout 等）だけでは
+表内の値の大小が伝わらないと利用者から指摘を受けたため。</p>
+
+<h2>差分: 表の中に虹色バーを埋め込む</h2>
+<p>共通ルールは図を「表と別枠」で置く想定だが、ch06 では複数行の値を比較する表（区分ごとの内訳、
+2GB以上の区分の内訳など）は、<strong>表のセル内に直接</strong> SVG バーを埋め込む。値が多いものほど赤、
+少ないものほど紫に近づく虹色（<code>hsl(280*(1-値/最大値),78%,25%)</code> →
+<code>hsl(...,58%,55%)</code> の2色グラデーション、幅は <code>値/最大値 * 150px</code>）。</p>
+
+<h2>差分: 状態バッジを行ごとに付ける</h2>
+<p>コマンドライン系の表（node/bun/PlayWright・claude・PlayWright/Chromium）は、行ごとに
+<code>badge b-ok</code>（☑ OK・緑）または <code>badge b-ng</code>（× 要調査・赤）を先頭列に付ける。
+残留・新規出現・未確認のものは <code>b-ng</code> にする。共通ルールのバッジは種類のラベルとして
+使う想定だが、ch06 では「注意して見るべきものはどれか」を一目で分かるようにする目的で使う。</p>
+
+<h2>差分: 前回との比較の図は、グレイのグラデーションで余白を見せ、pagefileは別の行にする</h2>
+<p>「前回との比較」の図は、ch01 の最初の図（物理メモリの使用状況）と同じ配色にする
+（使用中=赤、空き=緑）。軸は物理メモリ総量までとし、それより先には伸ばさない。
+WS合計・コミット合計も同じ px/MB の目盛りに揃えて赤バーで描き、値を描いた残りは
+<strong>薄いグレイのグラデーション</strong>で塗って余白を見せる。
+ページファイル（pagefile）は別の行として、同じ目盛りで確保サイズと空きを赤・緑で描く。
+サイズ・使用量は <code>Get-CimInstance Win32_PageFileUsage</code> の
+<code>AllocatedBaseSize</code>・<code>CurrentUsage</code>（MB）から取得する。これは現在の値であり
+レポート取得時点の値ではないため、図中にその旨を注記する。</p>
+
+<h2>差分: 実際のコマンドライン文字列を表に書く</h2>
+<p>共通ルールはコマンド見本の書き方（ダブルクォートで囲む等）だけを定めるが、ch06 では
+プロセスの素性を確かめる目的で、要約した説明文だけでなく<strong>実際のコマンドライン文字列</strong>を
+列として持つ。デスクトップ版 <code>claude.exe</code> のような長大なコマンドラインは、
+役割が分かる先頭部分（<code>--type=renderer --user-data-dir=…</code> 等）だけを書く。</p>
+
+<h2>差分: 2GB以上の区分は、プロセス別の内訳表を別に作る</h2>
+<p>「区分ごとの内訳」で2GB以上になった区分（Windows本体・ブラウザ・開発ツール等）は、
+実行ファイル別に分けた表を別に作る。区分の合計だけでは中身が分からないため。
+件数の多い小さいプロセスは「上記以外・小さいもの多数」のように1行にまとめてよい。</p>
+
+<div class="callout">
+<strong>この節の詳しい章立て・観点は <code>inspect-process-memory-observations.md</code> に書く。</strong>
+ここ（ローカルルール）は共通ルールとの差分だけを持ち、ch06 を書くときの具体的な手順・章立ては
+そちらを見る。
+</div>
+</section>
+
+</div>
+<footer>
+</footer>
+</body>
+</html>
