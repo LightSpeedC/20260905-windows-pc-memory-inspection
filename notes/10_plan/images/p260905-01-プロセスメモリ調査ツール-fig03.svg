@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 440" width="1160" height="440" role="img">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+	<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+	<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+	<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+	<linearGradient id="i4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(70,78%,25%)"/><stop offset="1" stop-color="hsl(70,58%,55%)"/></linearGradient>
+	<linearGradient id="i5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<linearGradient id="i6" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+	<linearGradient id="i7" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(240,78%,25%)"/><stop offset="1" stop-color="hsl(240,58%,55%)"/></linearGradient>
+	<linearGradient id="i8" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(200,78%,25%)"/><stop offset="1" stop-color="hsl(200,58%,55%)"/></linearGradient>
+	<linearGradient id="i9" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(160,78%,25%)"/><stop offset="1" stop-color="hsl(160,58%,55%)"/></linearGradient>
+	<linearGradient id="i10" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(120,78%,25%)"/><stop offset="1" stop-color="hsl(120,58%,55%)"/></linearGradient>
+	<linearGradient id="i11" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(80,78%,25%)"/><stop offset="1" stop-color="hsl(80,58%,55%)"/></linearGradient>
+	<linearGradient id="i12" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(40,78%,25%)"/><stop offset="1" stop-color="hsl(40,58%,55%)"/></linearGradient>
+	<linearGradient id="i13" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<marker id="i14" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5568"/>
+	</marker>
+</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+
+<text x="20" y="22" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="15" font-weight="700" fill="#1c2330">現行（5 章）</text>
+<rect x="20" y="36"  width="420" height="38" rx="6" fill="url(#i1)"/><text x="230" y="60" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">1. サマリ</text>
+<rect x="20" y="82"  width="420" height="38" rx="6" fill="url(#i2)"/><text x="230" y="106" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">2. プロセス名ごとの集計</text>
+<rect x="20" y="128" width="420" height="38" rx="6" fill="url(#i3)"/><text x="230" y="152" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">3. プロセス一覧（メモリ順）</text>
+<rect x="20" y="174" width="420" height="38" rx="6" fill="url(#i4)"/><text x="230" y="198" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">4. 起動時刻順（古い順）</text>
+<rect x="20" y="220" width="420" height="38" rx="6" fill="url(#i5)"/><text x="230" y="244" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">5. プロセスツリー</text>
+<text x="230" y="292" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#4a5568">すべて事実の一覧。読み手が自分で結論を組む</text>
+
+<line x1="470" y1="150" x2="580" y2="150" stroke="#4a5568" stroke-width="2" marker-end="url(#i14)"/>
+<text x="525" y="140" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">再編</text>
+
+<text x="610" y="22" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="15" font-weight="700" fill="#1c2330">B 案（8 章・採用）</text>
+<rect x="610" y="36"  width="420" height="38" rx="6" fill="url(#i6)"/><text x="820" y="60" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">1. 結論と所見　★新規</text>
+<rect x="610" y="82"  width="420" height="38" rx="6" fill="url(#i7)"/><text x="820" y="106" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">2. サマリ</text>
+<rect x="610" y="128" width="420" height="38" rx="6" fill="url(#i8)"/><text x="820" y="152" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">3. 内訳の分析　★新規</text>
+<rect x="610" y="174" width="420" height="38" rx="6" fill="url(#i9)"/><text x="820" y="198" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">4. 気になる兆候　★新規</text>
+<rect x="610" y="220" width="420" height="38" rx="6" fill="url(#i10)"/><text x="820" y="244" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">5. 起動の時系列　★図を追加</text>
+<rect x="610" y="266" width="420" height="38" rx="6" fill="url(#i11)"/><text x="820" y="290" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">6. プロセス名ごとの集計</text>
+<rect x="610" y="312" width="420" height="38" rx="6" fill="url(#i12)"/><text x="820" y="336" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">7. プロセス一覧（メモリ順）</text>
+<rect x="610" y="358" width="420" height="38" rx="6" fill="url(#i13)"/><text x="820" y="382" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" font-weight="700" fill="#ffffff">8. プロセスツリー</text>
+<text x="820" y="422" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#4a5568">前半が所見、後半が根拠データ</text>
+</svg>

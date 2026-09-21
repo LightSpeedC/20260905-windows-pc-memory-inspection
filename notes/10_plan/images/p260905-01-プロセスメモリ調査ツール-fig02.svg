@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 300" width="1140" height="300" role="img">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+	<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(250,78%,25%)"/><stop offset="1" stop-color="hsl(250,58%,55%)"/></linearGradient>
+	<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(250,78%,25%)"/><stop offset="1" stop-color="hsl(250,58%,55%)"/></linearGradient>
+	<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+	<linearGradient id="i4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(140,78%,25%)"/><stop offset="1" stop-color="hsl(140,58%,55%)"/></linearGradient>
+	<linearGradient id="i5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(210,78%,25%)"/><stop offset="1" stop-color="hsl(210,58%,55%)"/></linearGradient>
+	<marker id="i6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+		<path d="M 0 0 L 10 5 L 0 10 z" fill="#4a5568"/>
+	</marker>
+</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+
+<rect x="20" y="30" width="240" height="46" rx="8" fill="url(#i1)"/>
+<text x="140" y="59" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">前回の JSON</text>
+<rect x="20" y="94" width="240" height="46" rx="8" fill="url(#i2)"/>
+<text x="140" y="123" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">今回の収集結果</text>
+
+<line x1="272" y1="85" x2="330" y2="85" stroke="#4a5568" stroke-width="2" marker-end="url(#i6)"/>
+<text x="301" y="76" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">突合</text>
+
+<text x="345" y="22" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">同定キー ＝ PID ＋ 作成時刻（CreationDate）</text>
+
+<rect x="345" y="30" width="250" height="60" rx="8" fill="url(#i3)"/>
+<text x="470" y="55" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">終了した</text>
+<text x="470" y="75" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">前回にあり／今回に無い</text>
+
+<rect x="345" y="100" width="250" height="60" rx="8" fill="url(#i4)"/>
+<text x="470" y="125" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">継続している</text>
+<text x="470" y="145" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">両方にある → メモリの増減を見る</text>
+
+<rect x="345" y="170" width="250" height="60" rx="8" fill="url(#i5)"/>
+<text x="470" y="195" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="14" font-weight="700" fill="#ffffff">新しく起動した</text>
+<text x="470" y="215" text-anchor="middle" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="11" fill="#ffffff">前回に無く／今回にある</text>
+
+<line x1="607" y1="130" x2="665" y2="130" stroke="#4a5568" stroke-width="2" marker-end="url(#i6)"/>
+
+<text x="680" y="52" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">1 章「結論と所見」に差し込む所見:</text>
+<text x="680" y="82" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・使用率と空きの変化</text>
+<text x="680" y="107" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・カテゴリ別の増減</text>
+<text x="680" y="132" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・増加が大きい継続プロセス</text>
+<text x="680" y="157" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・新規起動と終了の件数・合計</text>
+<text x="680" y="182" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="13" fill="#1c2330">・経過時間（前回からの間隔）</text>
+
+<text x="20" y="270" font-family="Yu Gothic UI, Meiryo, sans-serif" font-size="12" fill="#4a5568">前回の記録が無ければ「初回」と表示し、差分の節は出さない。</text>
+</svg>
