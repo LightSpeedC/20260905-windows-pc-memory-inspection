@@ -15,9 +15,9 @@
 	見つかっても未認証で失敗する。必ず利用者のアカウントで実行する。
 
 	【subst ドライブ】
-	タスクスケジューラは別のログオンセッションで動くため N: が見えない。
+	タスクスケジューラは別のログオンセッションで動くため W: が見えない。
 	登録するパスは実体パスへ直す。cmd の中で subst を張り直すので、
-	起動さえできればその後は N: で動く。
+	起動さえできればその後は W: で動く。
 
 .PARAMETER TaskName
 	タスク名。既定は「プロセスメモリ調査」。
@@ -82,7 +82,7 @@ function Resolve-SubstPath([string]$Path) {
 	if ($drive.Length -ne 2) { return $Path }
 
 	foreach ($line in (subst)) {
-		# subst の出力は「N:\: => C:\〈実体フォルダ〉」の形
+		# subst の出力は「W:\: => C:\〈実体フォルダ〉」の形
 		$m = [regex]::Match([string]$line, '^\s*([A-Za-z]:)\\:\s+=>\s+(.+?)\s*$')
 		if ($m.Success -and $m.Groups[1].Value -eq $drive) {
 			return $m.Groups[2].Value + $Path.Substring($drive.Length)

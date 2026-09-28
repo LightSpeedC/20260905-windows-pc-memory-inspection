@@ -130,7 +130,7 @@ function Resolve-SubstPath([string]$Path) {
 	if ($drive.Length -ne 2) { return $Path }
 
 	foreach ($line in (subst)) {
-		# subst の出力は「N:\: => C:\〈実体フォルダ〉」の形
+		# subst の出力は「W:\: => C:\〈実体フォルダ〉」の形
 		$m = [regex]::Match([string]$line, '^\s*([A-Za-z]:)\\:\s+=>\s+(.+?)\s*$')
 		if ($m.Success -and $m.Groups[1].Value -eq $drive) {
 			$script:FoundSubstDrive = $drive

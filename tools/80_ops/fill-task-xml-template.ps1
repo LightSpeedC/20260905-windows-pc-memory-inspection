@@ -50,12 +50,12 @@ function Find-ProjectRoot([string]$ScriptDir) {
 	$projectRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
 
 	foreach ($line in (subst)) {
-		# 「N:\: => C:\〈実体フォルダ〉」の形
+		# 「W:\: => C:\〈実体フォルダ〉」の形
 		$m = [regex]::Match([string]$line, '^\s*([A-Za-z]:)\\:\s+=>\s+(.+?)\s*$')
 		if (-not $m.Success) { continue }
 		$drive = $m.Groups[1].Value
 		if ($projectRoot.StartsWith($drive, [System.StringComparison]::OrdinalIgnoreCase)) {
-			# N:\2026\... の N: を実体パスへ差し替える
+			# W:\2026\... の W: を実体パスへ差し替える
 			return $m.Groups[2].Value.TrimEnd('\') + $projectRoot.Substring($drive.Length)
 		}
 	}

@@ -112,7 +112,7 @@
 <div class="titlebar"><div class="inner">
 <h1>プロセスメモリ調査ツール — 計画と出力構成</h1>
 <div class="lead">PowerShell 5.1 で全プロセスのメモリと起動時刻を調べ、HTML レポートにする</div>
-<div class="date">📅 作成: 2026-09-05 / 更新: 2026-09-05</div>
+<div class="date">📅 作成: 2026-09-05 / 更新: 2026-09-28</div>
 </div></div>
 
 <div class="wrap">
@@ -380,7 +380,7 @@
 <tr><td class="nowrap">C:\Users\ 配下の名前</td><td class="nowrap">C:\Users\&lt;username&gt;</td></tr>
 <tr><td class="nowrap">ユーザー名</td><td class="nowrap">&lt;username&gt;</td></tr>
 <tr><td class="nowrap">コンピューター名</td><td class="nowrap">&lt;hostname&gt;</td></tr>
-<tr><td class="nowrap">subst の実体パス</td><td class="nowrap">元のドライブ表記（N: など）</td></tr>
+<tr><td class="nowrap">subst の実体パス</td><td class="nowrap">元のドライブ表記（X: など）</td></tr>
 </tbody>
 </table></div>
 <p><strong>subst の置き換えは他より先に行う。</strong>実体がユーザープロファイル配下にある環境では、先にユーザー名が伏せ字になるとドライブ表記へ戻せなくなる。</p>
@@ -408,9 +408,9 @@ pause</code></pre>
 
 <h2>subst ドライブの落とし穴</h2>
 
-<div class="callout"><strong>subst で割り当てたドライブは、UAC で昇格したプロセスからは存在しない。</strong>割り当てはログオンセッション単位で、昇格トークンは別セッションとして扱われるため引き継がれない。<code>-File "N:\...\xxx.ps1"</code> を渡すとパスが解決できず、スクリプトが<strong>起動すらしない</strong>。ウィンドウが一瞬で閉じるだけで、エラーも残らない。</div>
+<div class="callout"><strong>subst で割り当てたドライブは、UAC で昇格したプロセスからは存在しない。</strong>割り当てはログオンセッション単位で、昇格トークンは別セッションとして扱われるため引き継がれない。<code>-File "X:\...\xxx.ps1"</code> を渡すとパスが解決できず、スクリプトが<strong>起動すらしない</strong>。ウィンドウが一瞬で閉じるだけで、エラーも残らない。</div>
 
-<p>対処として、昇格する前に自分のパスを実体へ直す。<code>subst</code> の出力は「<code>N:\: =&gt; C:\〈実体フォルダ〉</code>」の形なので、正規表現 1 本で解決できる。</p>
+<p>対処として、昇格する前に自分のパスを実体へ直す。<code>subst</code> の出力は「<code>X:\: =&gt; C:\〈実体フォルダ〉</code>」の形なので、正規表現 1 本で解決できる。</p>
 
 <pre><code class="language-powershell">function Resolve-SubstPath([string]$Path) {
 	$root = [System.IO.Path]::GetPathRoot($Path)
@@ -419,7 +419,7 @@ pause</code></pre>
 	if ($drive.Length -ne 2) { return $Path }
 
 	foreach ($line in (subst)) {
-		# subst の出力は「N:\: => C:\〈実体フォルダ〉」の形
+		# subst の出力は「X:\: => C:\〈実体フォルダ〉」の形
 		$m = [regex]::Match([string]$line, '^\s*([A-Za-z]:)\\:\s+=&gt;\s+(.+?)\s*$')
 		if ($m.Success -and $m.Groups[1].Value -eq $drive) {
 			$script:FoundSubstDrive = $drive
@@ -948,7 +948,7 @@ logs/2026/202609/20260905.7z   ← こうして、フォルダは消す</code></
 <ul>
 <li>実行時刻の既定は深夜 3 時。<code>-At</code> で変えられるようにする</li>
 <li>登録はユーザー単位のタスクにする。管理者権限は要らない（自分のファイルを触るだけ）</li>
-<li><strong>subst ドライブの問題がここにも出る。</strong>タスクスケジューラは別のログオンセッションで動くため <code>N:</code> が見えない。登録時に実体パスへ直しておく（<a href="#ch05">5 章</a>の <code>Resolve-SubstPath</code> を使う）</li>
+<li><strong>subst ドライブの問題がここにも出る。</strong>タスクスケジューラは別のログオンセッションで動くため <code>X:</code> が見えない。登録時に実体パスへ直しておく（<a href="#ch05">5 章</a>の <code>Resolve-SubstPath</code> を使う）</li>
 <li>何度実行しても結果は同じ。圧縮済みのフォルダはもう存在しないため、二重に処理されない</li>
 </ul>
 

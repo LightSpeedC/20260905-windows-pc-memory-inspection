@@ -43,7 +43,7 @@ $script:UsersRoot = 'C:\Users'
 $script:UserName = 'user1'
 $script:ComputerName = 'HOST1'
 $script:FoundSubstRoot = 'C:\user1work'
-$script:FoundSubstDrive = 'N:'
+$script:FoundSubstDrive = 'W:'
 
 $ng = 0
 function Test-Case([string]$Name, [string]$Text, [string]$Expected) {
@@ -62,11 +62,11 @@ Write-Host 'Hide-Private の伏せ字'
 
 Test-Case 'subst の実体パスはドライブ表記に戻る（引数が渡らない経路）' `
 	'C:\user1work\2026\proj\tools\80_ops\x.cmd' `
-	'N:\2026\proj\tools\80_ops\x.cmd'
+	'W:\2026\proj\tools\80_ops\x.cmd'
 
 Test-Case '引用符の中の実体パスもドライブ表記に戻る' `
 	'C:\WINDOWS\system32\cmd.exe /c ""C:\user1work\2026\proj\x.cmd" "' `
-	'C:\WINDOWS\system32\cmd.exe /c ""N:\2026\proj\x.cmd" "'
+	'C:\WINDOWS\system32\cmd.exe /c ""W:\2026\proj\x.cmd" "'
 
 Test-Case 'ユーザープロファイル配下は ~ になる' `
 	'C:\Users\user1\AppData\Local\Temp\a.txt' `

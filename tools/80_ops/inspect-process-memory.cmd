@@ -10,8 +10,8 @@ rem     effort:<値>   考察の思考の深さを指定する（省略時は既定）
 rem     ※ = ではなく : で区切る。cmd は = をスペースと同じ引数区切りとして扱うため、
 rem       model=sonnet と書くと model と sonnet に割れてしまう（引用符が無い限り）
 rem
-rem subst で割り当てた N ドライブは別のログオンセッションからは見えないため、
-rem 接続先をシステム環境変数 _SECRET_SUBST_N_DRIVE から読んで張り直す。
+rem subst で割り当てた W ドライブは別のログオンセッションからは見えないため、
+rem 接続先をシステム環境変数 _SECRET_SUBST_W_DRIVE から読んで張り直す。
 
 setlocal enabledelayedexpansion
 
@@ -28,18 +28,18 @@ for %%a in (%*) do (
 	if /i "!ARG:~0,7!" == "effort:" set "EFFORT=!ARG:~7!"
 )
 
-if not defined _SECRET_SUBST_N_DRIVE (
-	echo 環境変数 _SECRET_SUBST_N_DRIVE が設定されていません。
+if not defined _SECRET_SUBST_W_DRIVE (
+	echo 環境変数 _SECRET_SUBST_W_DRIVE が設定されていません。
 	goto :end
 )
 
 rem 既に張られているときは何もしない。
 rem 二重に subst すると Drive already SUBSTed が出るため、存在を見てから張る
-if not exist N:\ subst N: "%_SECRET_SUBST_N_DRIVE%"
+if not exist W:\ subst W: "%_SECRET_SUBST_W_DRIVE%"
 
-cd /d "N:\2026\20260905-windows-pc-memory-inspection"
+cd /d "W:\2026\20260905-windows-pc-memory-inspection"
 if errorlevel 1 (
-	echo N ドライブへ移動できませんでした。
+	echo W ドライブへ移動できませんでした。
 	goto :end
 )
 
