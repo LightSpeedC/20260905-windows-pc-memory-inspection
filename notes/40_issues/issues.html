@@ -12,7 +12,8 @@
 		--accent:#12224d; --accent2:#2f5fbf; --soft:#f2f5fb;
 	}
 	.ch01{--accent:hsl(280,78%,25%);--accent2:hsl(280,58%,55%);--soft:hsl(280,28%,95%);}
-	.ch02{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
+	.ch02{--accent:hsl(140,78%,25%);--accent2:hsl(140,58%,55%);--soft:hsl(140,28%,95%);}
+	.ch03{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
 
 	*{box-sizing:border-box;}
 	body{margin:0;background:#fff;color:#1c2330;
@@ -102,6 +103,7 @@
 	.back-home{display:inline-block;padding:6px 10px;border-radius:8px;
 		background:linear-gradient(100deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));
 		color:#fff;text-decoration:none;line-height:0;}
+	.wrap > .back-home{margin-top:18px;}
 </style>
 </head>
 <body>
@@ -109,7 +111,7 @@
 <div class="titlebar"><div class="inner">
 <h1>プロセスメモリ調査ツール — 課題</h1>
 <div class="lead">これから解決することを集約する。状態は 未 / 着手 / 済 の 3 段階</div>
-<div class="date">📅 作成: 2026-09-08 / 更新: 2026-09-13</div>
+<div class="date">📅 作成: 2026-09-08 / 更新: 2026-10-06</div>
 </div></div>
 
 <div class="wrap">
@@ -120,6 +122,7 @@
 <ol>
 <li class="ch01"><a href="#ch01">出力の安全性</a></li>
 <li class="ch02"><a href="#ch02">自動化</a></li>
+<li class="ch03"><a href="#ch03">時系列の収集</a></li>
 </ol>
 </nav>
 
@@ -265,7 +268,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 </section>
 
 <section class="ch02" id="ch02">
-<h1>自動化 <span class="badge b-warn">着手</span> <span class="groupmeta">1 件（着手 1）</span></h1>
+<h1>自動化 <span class="badge b-warn">着手</span> <span class="groupmeta">3 件（着手 3）</span></h1>
 
 <p>タスクスケジューラの実行に、人手を介さない後続処理を持たせる話を集める。<strong>無人で動く分、途中で止まっても気づきにくいことを前提に確かめる</strong>のがこのグループの目的である。</p>
 
@@ -291,6 +294,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <strong>ch06「結論と所見」の作り方が、どこにも書かれていない。</strong>比較の手順（<code>reports-admin.txt</code> の 1 つ前の行と比べる）・章の構成（いまの状態／前回との比較／区分ごとの内訳／気になった点／次に見るとよいところ）は、いずれもこのセッションの指示文の中にしか存在しない。<code>claude -p "%REPORT% に考察を追加して"</code> という薄い指示のまま <code>noai</code> を外すと、回ごとに書き方がぶれる。</div>
 <p>あわせて、レポート本体が 600〜700 KB あるため、1 日 4 回この読み込みが発生する分のコスト増も考慮点になる。</p>
 
+
 <h2>やること</h2>
 <div class="tablewrap"><table>
 <thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
@@ -308,6 +312,118 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 
 <h2>直した内容</h2>
 <p><code>tools/80_ops/inspect-process-memory.cmd</code> に 1 行。<code>claude -p</code> を呼ぶ直前に、処理に数分（実測 5 分 36 秒）かかること・無出力でも止まっていないことを知らせるメッセージを追加した。</p>
+</details>
+
+<details open>
+<summary><span class="no">i261004-01</span>ドライブ変更の環境変数名だけ書き換え、実機に作らなかったため、約 5 日間レポートが生成されなかった <span class="badge b-warn">着手</span></summary>
+
+<h2>状況</h2>
+<p>2026-09-28 22:12 に、<code>inspect-process-memory.cmd</code> が読むシステム環境変数名を <code>_SECRET_SUBST_N_DRIVE</code> から <code>_SECRET_SUBST_W_DRIVE</code> へ書き換えた。<strong>システム環境変数は作っていなかった。</strong>変数が無いと、cmd は案内を出して <code>:end</code> へ抜け、<strong>終了コード 0 で終わる。</strong>タスクスケジューラの履歴には「完了」と出るため、失敗に見えなかった。</p>
+<p>09-29 00:00 の定時実行から 10-04 06:00 まで、約 22 回分のレポート（と ch06）が生成されなかった。10-04 08:14 にシステム環境変数を作り、cmd を管理者で手動実行して、レポートと ch06 が最後まで出ることを確認した。</p>
+
+<h2>続いて判明した失敗（10-04 08:29 以降）</h2>
+<p>環境変数を作ったあとも、タスクからの実行では ch06 が書かれなかった。<code>logs/task-run.log</code>（このとき追加したログ）で、次の 3 点が分かった。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>事実</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">ログイン期限切れ</td><td>タスクの実行ユーザーでは、<code>claude -p</code> が <code>Login expired</code> で失敗した（08:51 の実行は 15 秒・終了コード 2147942401）。ユーザーごとに <code>~/.claude</code> が別で、認証も別になる。実行ユーザーを変えて再実行したところ、4 分 33 秒・終了コード 0 で ch06 が書かれた</td></tr>
+<tr><td class="nowrap">ログの終了行が書かれない</td><td><code>claude</code> は PATH 先頭の共有ツール <code>claude.cmd</code>（ラッパー）に解決される。cmd は <code>call</code> なしで呼んだ .cmd から呼び出し元へ戻らないため、<code>claude -p</code> の後に足したログが一度も書かれなかった。<code>call claude.exe</code> に直して解消し、呼び出しの前後で終了コードを引き継げることを使い捨ての cmd で確認した</td></tr>
+<tr><td class="nowrap">ログの文字コード混在</td><td>cmd の書く行は SJIS、<code>claude -p</code> の出力は UTF-8 で、1 つのファイルに混ざる。読むと一部が化ける</td></tr>
+</tbody>
+</table></div>
+
+<h2>気づけなかった理由</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>事実</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">変更時の検証</td><td><strong>していない。</strong>実行したのは伏せ字のテスト（<code>tests/test-hide-private.ps1</code>）だけで、cmd も環境変数も対象外。変更後の名前が実機に存在するかを確かめなかった</td></tr>
+<tr><td class="nowrap">環境変数を作る作業の見落とし</td><td>「変数名を変える」指示を、文字列の置き換えだけで済むものと扱った。システム側に作る作業が要ることを、利用者にも伝えていない</td></tr>
+<tr><td class="nowrap">変更後の実行結果の確認</td><td>変更後のセッション（09-29 04:56 まで）で、00:00 の実行結果（<code>logs/reports-admin.txt</code>）を見ていない</td></tr>
+<tr><td class="nowrap">cron チェック（毎 :15）</td><td>09-29 00:15 の分が<strong>発火していない</strong>。会話ログに該当時刻の記録が無く、セッションが止まっていた。cron はセッションの中でしか生きず、頼れない</td></tr>
+<tr><td class="nowrap">セッションの空白</td><td>09-29 04:56 から 10-04 08:06 まで、このプロジェクトのセッションは 1 本も無い</td></tr>
+<tr><td class="nowrap">再開時の確認</td><td>10-04 の再開時に、ローカルルールに定義があるチェック用 cron を張り直さず、レポートの最終行も確認しなかった</td></tr>
+<tr><td class="nowrap">失敗が見えない設計</td><td>変数が無いときの終了コードが 0。スケジューラ側から失敗が分からない</td></tr>
+</tbody>
+</table></div>
+
+<h2>やること</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>システム環境変数 <code>_SECRET_SUBST_W_DRIVE</code> を作る</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">2</td><td>cmd を管理者で手動実行し、レポートと ch06 が出ることを確認する</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">3</td><td>タスクスケジューラ経由の定時実行（10-04 12:00）でレポートと ch06 が出ることを確認する（node 版で確認した。12:00:01 起動・12:04:10 完了、リターンコード 0、ch06 あり）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">4</td><td>cmd が環境変数なし・ドライブ移動失敗・レポート未検出で終了するとき、<strong>0 以外の終了コード（1）を返し、ログにも残す</strong>形に直す（10-04 に直し、環境変数なしの分岐を実機で確認した）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">5</td><td>変更したあと、<strong>実環境（タスク経由）で動かして結果を確かめるまでは「済」にしない</strong>ことを、<strong>共通ルール</strong>へ提案する（このプロジェクトだけの話ではないため）</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">6</td><td>セッションに頼らず、レポートの生成漏れを検知する手段を作る（検知用のタスク＋トースト通知＋ログ。node（TypeScript）で作る。計画: <a href="../10_plan/i261004-01-レポート生成漏れの検知.html">計画書</a>。10-04 に承認済み・実装中）</td><td class="nowrap"><span class="badge b-warn">着手</span></td></tr>
+<tr><td class="num">7</td><td>cmd に実行経過のログ（<code>logs/task-run.log</code>）を足す</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">8</td><td><code>claude</code> を <code>call claude.exe</code> に直し、終了コードとログの終了行が残るようにする</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">9</td><td>タスクの実行ユーザーを変え、タスクからの実行で ch06 が書かれることを確認する（10-04 08:52）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">10</td><td>実行ユーザーの Claude ログインが切れていないことを、実行前に確かめる手段を決める（期限切れが無言で失敗に見えるため）</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">11</td><td>ログの文字コード混在を解消する。起動の組み立て（cmd の中身）を node（TypeScript）へ移し、ログを UTF-8 の 1 種類で書く（上のやること 6 の計画に含める）</td><td class="nowrap"><span class="badge b-warn">着手</span></td></tr>
+<tr><td class="num">12</td><td>セッションを開き直したとき、ローカルルールに定義があるチェック用 cron を、指示を待たずに張り直す（10-04 に張り直した）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+</tbody>
+</table></div>
+</details>
+
+<details open>
+<summary><span class="no">i261006-01</span>生成タスクが、スリープをまたぐと定時分を落とし、取り戻さない <span class="badge b-warn">着手</span></summary>
+
+<h2>状況</h2>
+<p>PC が長くスリープすると、6 時間ごとのレポート生成が欠ける。10-04 18:00（18:17 に遅れて実行）、10-05 12:00・18:00（20:47 の復帰直後に 1 回だけ追いかけ）、<strong>10-06 0:00・6:00（起動の記録なし）</strong>。検知タスクは同じ時間帯に動いており、10-06 0:45 と 6:45 に <code>❌ 異常</code> を記録した（案Aの再確認の流れが、実環境で働いた最初の例）。</p>
+
+<h2>確認したこと（10-06）</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>事実</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">トリガー</td><td><strong>毎日 12:00 に起動する 1 本 ＋ 6 時間ごとの繰り返し（期間 1 日）</strong>。0:00・6:00・18:00 は、12:00 の繰り返しに依存する</td></tr>
+<tr><td class="nowrap">設定（調査時点）</td><td>「開始できなかった場合、すぐに実行する」<strong>オフ</strong>・スリープ解除オフ・AC 電源のときのみ開始オン・実行ユーザーのログオン種別は S4U・停止するまでの時間は設定 3 日／トリガー 30 分</td></tr>
+<tr><td class="nowrap">検知タスクとの違い</td><td>検知は<strong>独立した 8 トリガー ＋ 「開始できなかった場合、すぐに実行する」オン</strong>。同じスタンバイ中でも、全部動いた</td></tr>
+<tr><td class="nowrap">AC 電源</td><td>10-06 時点で AC・100%。電源の変更の記録も 10-05 20:47 以降なし。<strong>AC のみの条件は、今回の原因ではない</strong></td></tr>
+<tr><td class="nowrap">雛形との食い違い</td><td>リポジトリの <code>ai-pc-inspect-process-memory.xml</code> の引数は <code>nopause noai</code>。実際のタスクは <code>nopause</code></td></tr>
+</tbody>
+</table></div>
+<div class="callout callout-important">
+<strong>原因は未特定。</strong>「12:00 の 1 本のトリガーの繰り返し」の構造のため、12:00 がスリープ中で起動されないと、その日の繰り返しの連鎖が始まらない、という仮説がある（<strong>未検証</strong>）。復帰直後に動いた 10-04 18:17 と 10-05 20:47 は、この仮説だけでは説明できない。</div>
+
+<h2>やること</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>直し方を決める。案: A 4 つの独立した毎日トリガー（0:00・6:00・12:00・18:00）＋「開始できなかった場合、すぐに実行する」オン（恒久）／ <strong>B 「すぐに実行する」だけオン（暫定）</strong>／ C 現状維持。スリープ解除は別の判断。<strong>10-06 に B に決定</strong>。構造が原因なら効かない恐れがあり、その場合は A に進む</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">2</td><td>リポジトリの登録定義の雛形を直す。<code>StartWhenAvailable</code> を <code>true</code> にし、実行時間の上限（設定側 <code>PT72H</code>、トリガー側 <code>PT30M</code>）を<strong>どちらも <code>PT1H</code></strong> にし、引数の <code>noai</code> を削除して実際のタスクの <code>nopause</code> に揃えた（10-06）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">3</td><td>生きているタスクへ反映する。タスクの「設定」タブの<strong>「スケジュールされた時刻にタスクを開始できなかった場合、すぐにタスクを実行する」をオン</strong>にした。あわせて<strong>停止するまでの時間を 2 か所とも 1 時間</strong>にした（10-06。利用者の操作）。「設定」タブの<strong>3 日 → 1 時間</strong>と、「トリガー」の編集の<strong>30 分 → 1 時間</strong>（2 つのうち短いほうが効く）。「新しいインスタンスを開始しない」のため、止まったまま残った実行が、以降の定時分を塞ぐのを防ぐ。1 回の実行は通常 5〜8 分（node 側の上限は ps1 10 分 ＋ <code>claude -p</code> 30 分）で、1 時間に収まる</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">4</td><td><strong>実環境で確かめる</strong>。スリープをまたいだあとの定時分が、取り戻されること。取り戻されなければ、案 A へ進む</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+</tbody>
+</table></div>
+</details>
+
+</section>
+
+<section class="ch03" id="ch03">
+<h1>時系列の収集 <span class="badge b-warn">着手</span> <span class="groupmeta">1 件（着手 1）</span></h1>
+
+<p>6 時間ごとの「ある時点の写真」では追えない、メモリの増え方を時系列で残す話を集める。</p>
+
+<details open>
+<summary><span class="no">i261004-02</span>メモリを時系列で収集し、SQLite に記録する（Rust の常駐 1 本） <span class="badge b-warn">着手</span></summary>
+
+<h2>状況</h2>
+<p>システム全体のメモリを 1 分ごと、全プロセスの状態を 1 時間ごとに SQLite へ書き、毎日 23:59 に zip でバックアップする（100 世代）。<strong>言語は Rust、サービス化は winsw、PowerShell は使わない。</strong>方式は 10-04 に決めた（Rust・100 日分・zip）。計画は <a href="../10_plan/i261004-02-メモリ時系列収集.html">計画書</a>。</p>
+
+<h2>やること</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>計画の承認を受ける</td><td class="nowrap"><span class="badge b-ok">済</span>（10-04）</td></tr>
+<tr><td class="num">2</td><td>技術の確認（<code>sysinfo</code> の項目と、サービス権限での見え方）。この PC の Rust は GNU 構成で SQLite 同梱をビルドできなかったため、rustup で MSVC ツールチェーンを追加した</td><td class="nowrap"><span class="badge b-ok">済</span>（非管理者の分。<strong>サービス権限の見え方は、導入後に確かめる</strong>）</td></tr>
+<tr><td class="num">3</td><td>実装（収集・CPU 使用率・周期・バックアップ・版管理）とテスト</td><td class="nowrap"><span class="badge b-ok">済</span>（<code>cargo test</code> 60 件。実機で動作確認）</td></tr>
+<tr><td class="num">4</td><td>winsw の定義と導入手順、検知（<code>check-collector.ts</code>）</td><td class="nowrap"><span class="badge b-ok">済</span>（作成と、実物の DB での検知の確認。導入と検知タスクの登録は下の 7）</td></tr>
+<tr><td class="num">5</td><td>権限が無くて読めなかったプロセスの値（メモリ・仮想メモリ・CPU 累計）を、0 ではなく NULL で書く。試験用に <code>--times</code> を足す</td><td class="nowrap"><span class="badge b-ok">済</span>（非管理者の実機で、読めない 260 件が NULL、2 回目以降に CPU 使用率が入ることを確認。<code>cargo test</code> の全件が通る）</td></tr>
+<tr><td class="num">6</td><td><strong>DB の命名と日時の形式を <code>ai-chat-lite</code> に合わせる</strong>（日時を JST の 23 文字 TEXT に、<code>id</code> を <code>&lt;テーブル&gt;_id</code> に、略語を直す）。<strong>あわせて、昇格した権限で書いたかを <code>process_snapshot.is_admin</code> に残す。</strong><strong>導入の前に行う</strong>（計画書の「命名と日時の決まり」・手順 14）</td><td class="nowrap"><span class="badge b-warn">着手</span>（実装とテストは済。非管理者の実機で確認。<strong><code>is_admin = 1</code> は導入のときに確かめる</strong>。読めなかったプロセスの <code>started_at</code> が <code>1970/01/01</code> になるのは、そのままにする）</td></tr>
+<tr><td class="num">7</td><td>実環境で確かめる（<strong>管理者でサービスを導入</strong>し、稼働・再起動・自動起動・検知。23:59 のバックアップと世代の整理）</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+</tbody>
+</table></div>
 </details>
 
 </section>

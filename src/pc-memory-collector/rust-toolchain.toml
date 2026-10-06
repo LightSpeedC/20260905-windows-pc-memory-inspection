@@ -1,0 +1,4 @@
+[toolchain]
+# この PC の PATH 上の rustc は GNU 構成（C コンパイラが無く、SQLite 同梱をビルドできない）。MSVC を指定する
+channel = "stable-x86_64-pc-windows-msvc"
+profile = "minimal"

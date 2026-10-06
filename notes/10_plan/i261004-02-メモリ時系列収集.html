@@ -1,0 +1,525 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>メモリの時系列収集 — 計画</title>
+<style>
+	:root{
+		--navy1:#12224d; --navy2:#2f5fbf;
+		--ink:#1c2330; --ink-soft:#4a5568; --line:#d9dfe8; --code-bg:#f4f6fa;
+		--link:#1a4fa0;
+		--accent:#12224d; --accent2:#2f5fbf; --soft:#f2f5fb;
+	}
+	.ch01{--accent:hsl(280,78%,25%);--accent2:hsl(280,58%,55%);--soft:hsl(280,28%,95%);}
+	.ch02{--accent:hsl(224,78%,25%);--accent2:hsl(224,58%,55%);--soft:hsl(224,28%,95%);}
+	.ch03{--accent:hsl(168,78%,25%);--accent2:hsl(168,58%,55%);--soft:hsl(168,28%,95%);}
+	.ch04{--accent:hsl(112,78%,25%);--accent2:hsl(112,58%,55%);--soft:hsl(112,28%,95%);}
+	.ch05{--accent:hsl(56,78%,25%);--accent2:hsl(56,58%,55%);--soft:hsl(56,28%,95%);}
+	.ch06{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
+
+	*{box-sizing:border-box;}
+	body{margin:0;background:#fff;color:#1c2330;
+		font-family:"Yu Gothic UI","Meiryo","Segoe UI",system-ui,sans-serif;
+		font-size:15.5px;line-height:1.85;}
+
+	.titlebar{background:linear-gradient(135deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));color:#fff;padding:34px 30px 30px;}
+	.titlebar .inner{max-width:1600px;margin:0 auto;}
+	.titlebar h1{font-size:1.9em;margin:0 0 8px;color:#fff;}
+	.titlebar .lead{font-size:.92em;color:#dde6f7;background:transparent;}
+	.titlebar .date{font-size:.88em;color:#c9d8f2;background:transparent;margin-top:6px;}
+
+	.wrap{max-width:1600px;margin:0 auto;padding:0 30px;}
+
+	a{color:var(--link,#1a4fa0);background:transparent;}
+
+	.toc{margin:26px 0 0;}
+	.toc ol{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:12px 0 0;counter-reset:tocn;}
+	.toc li{counter-increment:tocn;}
+	.toc a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+		text-overflow:ellipsis;white-space:normal;width:310px;max-width:100%;
+		background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;text-decoration:none;padding:8px 12px;border-radius:6px;font-weight:700;font-size:.92em;}
+	.toc a::before{content:counter(tocn) ". ";font-weight:700;}
+
+	section{background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border:1px solid var(--line,#d9dfe8);border-radius:10px;padding:4px 26px 26px;margin:34px 0;}
+	section h1{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:14px 20px;margin:26px 0 20px;border-radius:8px;
+		box-shadow:0 3px 10px rgba(18,34,77,.22);font-size:1.4em;}
+	h2{background:linear-gradient(90deg,var(--soft,#f2f5fb),#fff);color:var(--accent,#12224d);
+		border-left:6px solid var(--accent,#12224d);padding:6px 12px;margin:30px 0 12px;
+		font-size:1.12em;border-radius:0 6px 6px 0;}
+	h3{display:inline-block;color:var(--accent,#12224d);background:transparent;
+		border-bottom:2px dotted var(--accent2,#2f5fbf);padding-bottom:3px;margin:20px 0 8px;font-size:1em;}
+	p{background:transparent;color:var(--ink,#1c2330);}
+
+	.tablewrap{overflow-x:auto;margin:12px 0;}
+	table{border-collapse:collapse;width:100%;background:#fff;color:var(--ink,#1c2330);
+		border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(18,34,77,.10);font-size:.92em;
+		line-height:1.5;}
+	th{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:6px 11px;text-align:left;white-space:nowrap;font-weight:700;}
+	td{padding:6px 11px;border-bottom:1px solid var(--line,#d9dfe8);vertical-align:top;
+		background:transparent;color:var(--ink,#1c2330);}
+	tr:nth-child(even) td{background:#fafbfe;color:var(--ink,#1c2330);}
+	td.num{text-align:right;white-space:nowrap;}
+	td.nowrap{white-space:nowrap;}
+
+	.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.82em;font-weight:700;
+		white-space:nowrap;color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+	.b-ok{color:#fff;background:linear-gradient(100deg,#1d7a3c,#45b56c);}
+	.b-ng{color:#fff;background:linear-gradient(100deg,#a51f22,#e05a5c);}
+	.b-warn{color:#fff;background:linear-gradient(100deg,#b8620a,#f0a548);}
+	.b-none{color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+
+	.callout{border-left:6px solid var(--accent,#12224d);
+		background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+	.callout strong{color:var(--accent,#12224d);background:transparent;}
+
+	code{background:var(--code-bg,#f4f6fa);border:1px solid var(--line,#d9dfe8);color:#17335f;
+		padding:1px 5px;border-radius:4px;font-size:.92em;
+		font-family:Consolas,"Courier New",monospace;}
+	pre{background:#fff;color:var(--ink,#1c2330);border:1px solid var(--line,#d9dfe8);
+		border-left:5px solid var(--accent2,#2f5fbf);border-radius:0 8px 8px 0;
+		padding:13px 16px;overflow-x:auto;font-size:.9em;line-height:1.6;
+		font-family:Consolas,"Courier New",monospace;}
+	pre code{background:transparent;border:none;color:var(--ink,#1c2330);padding:0;}
+
+	ul,ol{background:transparent;color:var(--ink,#1c2330);}
+
+	footer{max-width:1600px;margin:40px auto 0;padding:18px 30px 0;
+		border-top:1px solid var(--line,#d9dfe8);color:var(--ink-soft,#4a5568);
+		background:#fff;font-size:.88em;}
+
+	.back-home{display:inline-block;padding:6px 10px;border-radius:6px;
+		background:linear-gradient(100deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));
+		color:#fff;text-decoration:none;line-height:0;}
+	.wrap > .back-home{margin-top:18px;}
+</style>
+</head>
+<body>
+
+<div class="titlebar"><div class="inner">
+<h1>メモリの時系列収集 — 計画</h1>
+<div class="lead">システム全体のメモリを 1 分ごと、全プロセスの状態を 1 時間ごとに SQLite へ記録し、毎日バックアップする</div>
+<div class="date">📅 作成: 2026-10-04 / 更新: 2026-10-06</div>
+</div></div>
+
+<div class="wrap">
+
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+
+<nav class="toc">
+<ol>
+<li class="ch01"><a href="#ch01">この計画について</a></li>
+<li class="ch02"><a href="#ch02">方式</a></li>
+<li class="ch03"><a href="#ch03">データ</a></li>
+<li class="ch04"><a href="#ch04">動き</a></li>
+<li class="ch05"><a href="#ch05">手順</a></li>
+<li class="ch06"><a href="#ch06">決めておくこととリスク</a></li>
+</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>この計画について</h1>
+
+<h2>目的</h2>
+<p>いまのレポートは「ある時点」の写真で、6 時間ごとにしか撮れない。<strong>メモリがいつ・どのプロセスで増えたか</strong>を後から追えるよう、時系列で残す。</p>
+
+<h2>作るもの</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>内容</th><th>間隔</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>システム全体のメモリ容量（物理・コミット・ページファイル）を SQLite に書く</td><td class="nowrap">1 分ごと</td></tr>
+<tr><td class="num">2</td><td>全プロセスの起動時刻・pid・CPU 累計・CPU 使用率・メモリなどを SQLite に書く</td><td class="nowrap">1 時間ごと</td></tr>
+<tr><td class="num">3</td><td>DB のバックアップ。<strong>zip</strong> に固めて <strong>100 世代</strong>（毎日 1 回なので 100 日分）保持する</td><td class="nowrap">毎日 23:59</td></tr>
+</tbody>
+</table></div>
+
+<h2>決まっている方針</h2>
+<ul>
+<li><strong>言語は Rust</strong>。待機時のメモリが最小で（10-04 の実測: std のみで WS 4〜9 MB・プライベート 0.8 MB。Go は 7.4 MB・11.8 MB、node は約 34 MB・18 MB）、単一の実行ファイルで配れる</li>
+<li><strong>PowerShell は使わない</strong></li>
+<li><strong>圧縮は言語側の機能</strong>（zip）。外部の 7z は使わない</li>
+<li><strong>Windows は winsw でサービス化する</strong>。<code>ai-chat-lite</code> の構成を参考にする。Linux・Mac のサービス化は別途</li>
+<li><strong>Mac・Linux でも動く作りにする</strong>。収集の部分だけを OS ごとに分け、DB・スケジュール・バックアップは共通にする</li>
+</ul>
+
+<h2>この計画でやらないこと</h2>
+<ul>
+<li><strong>Linux・Mac のサービス化と、その実機での確認</strong>。ビルドが通り、収集が動く形までにとどめる</li>
+<li><strong>DB の古いデータの間引き</strong>。サイズが問題になってから判断する（「決めておくこととリスク」を参照）</li>
+<li><strong>既存のレポート生成（6 時間ごと）の変更</strong>。そのまま動かす</li>
+</ul>
+</section>
+
+<section class="ch02" id="ch02">
+<h1>方式</h1>
+
+<h2>言語の比較（10-04 の検討）</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>候補</th><th>待機時のメモリ</th><th>評価</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><span class="badge b-ok">採用</span> Rust</td><td class="nowrap">WS 4〜9 MB</td><td>プロセス・メモリ・CPU を OS 共通で取れる <code>sysinfo</code>、SQLite 同梱の <code>rusqlite</code>、<code>zip</code> があり、FFI も PowerShell も要らない。<code>ai-chat-lite</code> に Rust 版 CLI と winsw の前例がある</td></tr>
+<tr><td class="nowrap">Go</td><td class="nowrap">WS 7.4 MB</td><td>次点。プロセス情報に外部ライブラリが要り、言語がもう 1 つ増える</td></tr>
+<tr><td class="nowrap">node（<code>node:sqlite</code> ＋ koffi）</td><td class="nowrap">WS 約 34 MB</td><td>PowerShell を使わないと、Windows のプロセス一覧を FFI で自作することになり、実装が重い</td></tr>
+<tr><td class="nowrap">bun（<code>bun:ffi</code>）</td><td class="nowrap">WS 約 17 MB（プライベート約 70 MB）</td><td>node と同じ理由。共通ルールの node 併用も満たせない</td></tr>
+</tbody>
+</table></div>
+
+<h2>常駐 1 本で、3 つの周期を動かす</h2>
+<p>1 分ごとの起動をタスクスケジューラで行うと、<strong>履歴が 1 日で約 8,600 件</strong>増え、他のタスクの履歴まで流れ消える（いまのログは約 4 日分しか残らない）。このため、<strong>常駐する 1 つのプロセス</strong>が、1 分・1 時間・23:59 の 3 つの周期を内部で動かす。</p>
+
+<h2>ビルドの環境（10-04 に判明）</h2>
+<p>この PC の PATH 上の <code>rustc</code> は、<strong>GNU 構成のオフライン版</strong>（<code>rust-offline</code>）で、C コンパイラ・アセンブラが無く、SQLite 同梱（<code>rusqlite</code>）をビルドできなかった。このため、<strong>rustup（<code>C:/Tools/rust</code>）に MSVC ツールチェーンを追加</strong>した（<code>rustup toolchain install stable-x86_64-pc-windows-msvc --profile minimal</code>。Visual Studio 2022 の <code>cl.exe</code> を使う。既存の GNU 版は残り、PATH 上の <code>rustc</code> には影響しない）。</p>
+<ul>
+<li>プロジェクトは <code>src/pc-memory-collector/rust-toolchain.toml</code> で MSVC を指定する。ビルド・テストは <code>tools/20_build/rust-env.ps1</code>（rustup の置き場を指す）を経由する</li>
+<li>rustup の置き場が違う環境では、環境変数 <code>PC_MEMORY_RUST_ROOT</code> で指す</li>
+</ul>
+
+<h2>置き場所</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>もの</th><th>場所</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">ソース</td><td class="nowrap"><code>src/pc-memory-collector/</code></td><td>Rust のプロジェクト。<code>Cargo.lock</code> も Git に入れる。<code>target/</code> は管理外にする</td></tr>
+<tr><td class="nowrap">DB</td><td class="nowrap"><code>_data/pc-memory.db</code></td><td>先頭 <code>_</code> は Git 管理外（<code>ai-chat-lite</code> と同じ置き方）</td></tr>
+<tr><td class="nowrap">バックアップ</td><td class="nowrap"><code>_backup/pc-memory-yyyymmdd.zip</code></td><td>同上</td></tr>
+<tr><td class="nowrap">サービス定義</td><td class="nowrap"><code>tools/80_ops/winsw/</code></td><td>XML は Git に入れる。winsw の実行ファイルは Git に入れない（導入手順に書く）</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section class="ch03" id="ch03">
+<h1>データ</h1>
+
+<h2>テーブル</h2>
+<p>日時はすべて <strong>JST の <code>yyyy/mm/dd hh:mm:ss.ccc</code>（固定 23 文字の TEXT）</strong>で持つ。<code>ai-chat-lite</code> の DB に合わせた形（共通ルール「アプリケーションログの日時形式」と同じ書式）。固定長なので、<strong>文字列の辞書順がそのまま時系列順</strong>になり、DB を直接見ても読める。プログラムの中の計算は ms のままで、DB に書く・読むところだけで変換する。列名・日時・NULL の決まりは、この章の「命名と日時の決まり」にまとめた。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>テーブル</th><th>列</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>system_memory</code></td><td>measured_at（主キー）、物理の合計・空き、コミットの上限・使用量、ページファイルの合計・使用量（OS に無い値は NULL）</td></tr>
+<tr><td class="nowrap"><code>process_snapshot</code></td><td>process_snapshot_id、measured_at、論理 CPU 数、プロセス数、コマンドラインが取れなかった数、<strong>昇格した権限で書いたか（is_admin）</strong></td></tr>
+<tr><td class="nowrap"><code>process_sample</code></td><td>process_snapshot_id、pid、親 pid、<strong>起動時刻（started_at）</strong>、プロセス名、実行ファイルのパス、<strong>コマンドライン（<code>command_line</code> テーブルの id）</strong>、<strong>CPU 累計（ミリ秒）</strong>、<strong>CPU 使用率</strong>、物理メモリ（WS）、仮想メモリ（<code>sysinfo</code> がスレッド数を返さないため、スレッド数は持たない）。パスとコマンドラインの<strong>ユーザープロファイルは <code>~</code> に置換</strong>して書く</td></tr>
+<tr><td class="nowrap"><code>command_line</code></td><td>command_line_id、本文（<strong>重複を持たない</strong>）。同じプロセスのコマンドラインは毎時間ほぼ同じで、長いもの（Electron 系は 2 KB を超える）もあるため、<code>process_sample</code> には id だけを入れる</td></tr>
+<tr><td class="nowrap"><code>collector_event</code></td><td>collector_event_id、occurred_at、種別（開始・停止・エラー・バックアップ）、内容</td></tr>
+<tr><td class="nowrap"><code>versions</code></td><td>version_seq（主キー）、applied_at、script_name、sql_sha256。<strong>どの版まで当てたか</strong>を持つ（次の「スキーマの版管理」を参照）</td></tr>
+</tbody>
+</table></div>
+
+<h2>テーブル定義（版 1。手順 14 で、命名と日時を直した形）</h2>
+<p>正は <code>src/scripts/20_migrate/ver_000001/001-initial.sql</code>。全テーブルを <code>STRICT</code>（型を守らせる）にする。<strong>サイズは byte、日時は JST の 23 文字 TEXT</strong>。OS に無い値は NULL にする。</p>
+
+<h3>関係</h3>
+<svg viewBox="0 0 960 540" style="max-width:100%;height:auto" role="img" aria-label="テーブルの関係図（ER 図）" font-family="sans-serif" font-size="13">
+<defs>
+<linearGradient id="g-er-1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+<linearGradient id="g-er-2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(220,78%,25%)"/><stop offset="1" stop-color="hsl(220,58%,55%)"/></linearGradient>
+<linearGradient id="g-er-3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(160,78%,25%)"/><stop offset="1" stop-color="hsl(160,58%,55%)"/></linearGradient>
+<linearGradient id="g-er-4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(100,78%,25%)"/><stop offset="1" stop-color="hsl(100,58%,55%)"/></linearGradient>
+<linearGradient id="g-er-5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(40,78%,25%)"/><stop offset="1" stop-color="hsl(40,58%,55%)"/></linearGradient>
+<linearGradient id="g-er-6" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+</defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g font-size="13">
+
+<!-- 関係の線（箱より先に描く） -->
+<g stroke="#4a5568" stroke-width="2" fill="none">
+<line x1="260" y1="60" x2="340" y2="60"/>
+<polyline points="620,180 660,180 660,60 700,60"/>
+</g>
+<g fill="#1c2330" font-weight="700" font-size="14">
+<text x="266" y="52">1</text><text x="324" y="52">n</text>
+<text x="626" y="172">n</text><text x="684" y="52">1</text>
+</g>
+<g fill="#4a5568" font-size="11">
+<text x="668" y="130">command_line_id</text>
+</g>
+
+<!-- process_snapshot -->
+<rect x="20" y="20" width="240" height="156" fill="#fff" stroke="hsl(280,78%,25%)" stroke-width="2"/>
+<rect x="20" y="20" width="240" height="28" fill="url(#g-er-1)"/>
+<text x="32" y="39" fill="#fff" font-weight="700">process_snapshot（毎時）</text>
+<g fill="#1c2330">
+<text x="32" y="64">process_snapshot_id</text><text x="32" y="84">measured_at</text><text x="32" y="104">logical_cpu_count</text><text x="32" y="124">process_count</text><text x="32" y="144">command_line_unreadable_count</text><text x="32" y="164">is_admin</text>
+</g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="250" y="64">PK</text></g>
+
+<!-- process_sample -->
+<rect x="340" y="20" width="280" height="256" fill="#fff" stroke="hsl(220,78%,25%)" stroke-width="2"/>
+<rect x="340" y="20" width="280" height="28" fill="url(#g-er-2)"/>
+<text x="352" y="39" fill="#fff" font-weight="700">process_sample（1 件 = 1 プロセス）</text>
+<g fill="#1c2330">
+<text x="352" y="64">process_snapshot_id</text><text x="352" y="84">pid</text><text x="352" y="104">started_at</text><text x="352" y="124">parent_pid</text><text x="352" y="144">process_name</text><text x="352" y="164">exe_path</text><text x="352" y="184">command_line_id</text><text x="352" y="204">cpu_total_ms</text><text x="352" y="224">cpu_percent</text><text x="352" y="244">memory_bytes</text><text x="352" y="264">virtual_bytes</text>
+</g>
+<g fill="#4a5568" font-size="11" text-anchor="end">
+<text x="610" y="64">PK FK</text><text x="610" y="84">PK</text><text x="610" y="104">PK</text><text x="610" y="124">NULL 可</text><text x="610" y="164">NULL 可</text><text x="610" y="184">FK・NULL 可</text><text x="610" y="204">NULL 可</text><text x="610" y="224">NULL 可</text><text x="610" y="244">NULL 可</text><text x="610" y="264">NULL 可</text>
+</g>
+
+<!-- command_line -->
+<rect x="700" y="20" width="220" height="76" fill="#fff" stroke="hsl(160,78%,25%)" stroke-width="2"/>
+<rect x="700" y="20" width="220" height="28" fill="url(#g-er-3)"/>
+<text x="712" y="39" fill="#fff" font-weight="700">command_line（辞書）</text>
+<g fill="#1c2330"><text x="712" y="64">command_line_id</text><text x="712" y="84">command_line_body</text></g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="910" y="64">PK</text><text x="910" y="84">UNIQUE</text></g>
+
+<text x="20" y="324" fill="#4a5568" font-size="12">下の 3 つは単独のテーブル（他のテーブルとは外部キーで結ばない）</text>
+
+<!-- system_memory -->
+<rect x="20" y="340" width="240" height="176" fill="#fff" stroke="hsl(100,78%,25%)" stroke-width="2"/>
+<rect x="20" y="340" width="240" height="28" fill="url(#g-er-4)"/>
+<text x="32" y="359" fill="#fff" font-weight="700">system_memory（毎分）</text>
+<g fill="#1c2330">
+<text x="32" y="384">measured_at</text><text x="32" y="404">phys_total</text><text x="32" y="424">phys_avail</text><text x="32" y="444">swap_total</text><text x="32" y="464">swap_used</text><text x="32" y="484">commit_limit</text><text x="32" y="504">commit_used</text>
+</g>
+<g fill="#4a5568" font-size="11" text-anchor="end">
+<text x="250" y="384">PK</text><text x="250" y="444">NULL 可</text><text x="250" y="464">NULL 可</text><text x="250" y="484">NULL 可</text><text x="250" y="504">NULL 可</text>
+</g>
+
+<!-- collector_event -->
+<rect x="340" y="340" width="280" height="116" fill="#fff" stroke="hsl(40,78%,25%)" stroke-width="2"/>
+<rect x="340" y="340" width="280" height="28" fill="url(#g-er-5)"/>
+<text x="352" y="359" fill="#fff" font-weight="700">collector_event（出来事の記録）</text>
+<g fill="#1c2330"><text x="352" y="384">collector_event_id</text><text x="352" y="404">occurred_at</text><text x="352" y="424">event_kind</text><text x="352" y="444">event_message</text></g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="610" y="384">PK</text></g>
+
+<!-- versions -->
+<rect x="700" y="340" width="240" height="116" fill="#fff" stroke="hsl(0,78%,25%)" stroke-width="2"/>
+<rect x="700" y="340" width="240" height="28" fill="url(#g-er-6)"/>
+<text x="712" y="359" fill="#fff" font-weight="700">versions（版管理）</text>
+<g fill="#1c2330"><text x="712" y="384">version_seq</text><text x="712" y="404">applied_at</text><text x="712" y="424">script_name</text><text x="712" y="444">sql_sha256</text></g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="930" y="384">PK</text></g>
+</g>
+</svg>
+<p>線の <strong>1</strong> と <strong>n</strong> は、1 件に対して何件がぶら下がるか（<code>process_snapshot</code> 1 件に <code>process_sample</code> が多数、<code>command_line</code> 1 件を多数の <code>process_sample</code> が参照）。<strong>PK</strong> は主キー、<strong>FK</strong> は他のテーブルへの参照、<strong>NULL 可</strong> は値が無いことがある列。<code>versions</code> だけは、版 1 の SQL ではなく、起動時にプログラムが作る。</p>
+
+<h3><code>system_memory</code>（1 分ごとのシステム全体）</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>NULL</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>measured_at</code></td><td class="nowrap">TEXT(23) 主キー</td><td class="nowrap">不可</td><td>取得時刻（JST）。1 分ごとの行がそのまま収集の生存確認になる</td></tr>
+<tr><td class="nowrap"><code>phys_total</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>物理メモリの合計</td></tr>
+<tr><td class="nowrap"><code>phys_avail</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>物理メモリの空き</td></tr>
+<tr><td class="nowrap"><code>swap_total</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>スワップの合計。Windows ではページファイルの合計</td></tr>
+<tr><td class="nowrap"><code>swap_used</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>スワップの使用量</td></tr>
+<tr><td class="nowrap"><code>commit_limit</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>コミットの上限（Linux・Mac で取れないときは NULL）</td></tr>
+<tr><td class="nowrap"><code>commit_used</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>コミットの使用量</td></tr>
+</tbody>
+</table></div>
+<p>索引は主キーのみ（<code>measured_at</code> での範囲検索はこれで足りる）。</p>
+
+<h3><code>process_snapshot</code>（1 時間ごとの親）</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>NULL</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>process_snapshot_id</code></td><td class="nowrap">INTEGER 主キー</td><td class="nowrap">不可</td><td>スナップショットの番号</td></tr>
+<tr><td class="nowrap"><code>measured_at</code></td><td class="nowrap">TEXT(23)</td><td class="nowrap">不可</td><td>取得時刻（JST）</td></tr>
+<tr><td class="nowrap"><code>logical_cpu_count</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>論理 CPU 数。CPU 使用率の計算に使う（その時点の値を残す）</td></tr>
+<tr><td class="nowrap"><code>process_count</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>プロセス数</td></tr>
+<tr><td class="nowrap"><code>command_line_unreadable_count</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>コマンドラインが取れなかった数。<strong>黙って欠けないため</strong>に持つ（権限が足りないと増える）</td></tr>
+<tr><td class="nowrap"><code>is_admin</code></td><td class="nowrap">INTEGER (0 / 1)</td><td class="nowrap">不可</td><td><strong>管理者権限（昇格済み、または LocalSystem）で動いていたか</strong>。UAC で昇格していない管理者アカウントは 0。<code>CHECK (is_admin IN (0, 1))</code>。権限で、読めなかったプロセスの数が大きく変わる（非管理者の実測: 568 件中およそ 260 件）ため、あとから区別できるように持つ。判定は、Windows ではトークンの昇格状態（<code>GetTokenInformation</code> の <code>TokenElevation</code>）、Linux・Mac は、まだ実装しない（実機で確かめられないため、常に 0 とし、対応は別に行う）。<strong>昇格の状態は、プロセスが動いている間は変わらない</strong>。<code>system_memory</code> には持たない（権限に左右されない。非管理者の実測で全列が埋まった）。その行の権限を知りたいときは、直前の開始イベントを見る</td></tr>
+</tbody>
+</table></div>
+<p>索引: <code>process_snapshot_ix_measured_at</code>（<code>measured_at</code>）。</p>
+
+<h3><code>command_line</code>（コマンドラインの辞書）</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>NULL</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>command_line_id</code></td><td class="nowrap">INTEGER 主キー</td><td class="nowrap">不可</td><td>番号</td></tr>
+<tr><td class="nowrap"><code>command_line_body</code></td><td class="nowrap">TEXT UNIQUE</td><td class="nowrap">不可</td><td>本文（<code>~</code> に置換済み）。<strong>同じ文字列は 1 行だけ</strong>。毎時間ほぼ同じで長いため、<code>process_sample</code> は id で参照する</td></tr>
+</tbody>
+</table></div>
+
+<h3><code>process_sample</code>（プロセス 1 件が 1 行）</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>NULL</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>process_snapshot_id</code></td><td class="nowrap">INTEGER 主キー(1)</td><td class="nowrap">不可</td><td><code>process_snapshot.process_snapshot_id</code> への参照（<strong>参照先の主キーと同じ名前</strong>）</td></tr>
+<tr><td class="nowrap"><code>pid</code></td><td class="nowrap">INTEGER 主キー(2)</td><td class="nowrap">不可</td><td>プロセス ID</td></tr>
+<tr><td class="nowrap"><code>started_at</code></td><td class="nowrap">TEXT(23) 主キー(3)</td><td class="nowrap">不可</td><td>起動時刻（JST）。<strong>pid は再利用される</strong>ため、必ず組み合わせて同じプロセスを見分ける</td></tr>
+<tr><td class="nowrap"><code>parent_pid</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>親の pid</td></tr>
+<tr><td class="nowrap"><code>process_name</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td><td>プロセス名</td></tr>
+<tr><td class="nowrap"><code>exe_path</code></td><td class="nowrap">TEXT</td><td class="nowrap">可</td><td>実行ファイルのパス（<code>~</code> に置換済み。権限が無いと NULL）</td></tr>
+<tr><td class="nowrap"><code>command_line_id</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td><code>command_line.command_line_id</code> への参照。取れなければ NULL</td></tr>
+<tr><td class="nowrap"><code>cpu_total_ms</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>CPU 時間の累計（ミリ秒）。<strong>読めなかったプロセスは NULL</strong>（下の注）</td></tr>
+<tr><td class="nowrap"><code>cpu_percent</code></td><td class="nowrap">REAL</td><td class="nowrap">可</td><td>前回のスナップショットとの差から出した、全体に対する割合。<strong>前回が無ければ NULL</strong></td></tr>
+<tr><td class="nowrap"><code>memory_bytes</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>物理メモリ（Windows ではワーキングセット）。<strong>読めなかったプロセスは NULL</strong></td></tr>
+<tr><td class="nowrap"><code>virtual_bytes</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>仮想メモリ。<strong>読めなかったプロセスは NULL</strong></td></tr>
+</tbody>
+</table></div>
+<div class="callout callout-important">
+<p><strong>注: 権限が無くて読めなかったプロセスの値は、0 ではなく NULL で書く。</strong>非管理者での実測（568 件）で、261 件（OS の中核: System・csrss・smss・winlogon 等）は、メモリと CPU 累計が 0、実行ファイルのパスが無い、の 3 つが完全に一致した。0 で書くと「使っていない」「暇だった」と読めて、平均や合計を狂わせる。判定は <strong>メモリが 0 で、かつパスが取れていない</strong>こと（パスが取れていれば、0 は本当の 0）。集計では、<code>AVG</code>・<code>SUM</code> は NULL を飛ばす。<code>command_line</code> との結合は <code>LEFT JOIN</code> にする（内部結合は <code>command_line_id</code> が NULL の行を落とす）。</p>
+<p><code>cpu_percent</code> は、前回が無い・前回か今回が読めなかったときも NULL。</p>
+<p><span class="badge b-ok">決定</span> 読めなかったプロセスの <code>started_at</code> は、<code>sysinfo</code> が起動時刻に 0 を返すため、<code>1970/01/01 09:00:00.000</code> で書かれる（実測）。主キーの一部なので NULL にはできない。<strong>そのまま書く</strong>（10-06 に決定）。読めなかった行は、メモリ・CPU が NULL なので、<code>started_at</code> が 1970 年なら「読めなかった行」と分かる。</p>
+</div>
+<p>主キーは <code>(process_snapshot_id, pid, started_at)</code>（<code>WITHOUT ROWID</code>）。索引: <code>process_sample_ix_pid_started_at</code>（<code>pid, started_at</code>）。<strong>同じプロセスの時系列を引くのに使う</strong>。</p>
+
+<h3><code>collector_event</code>（収集の出来事）</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>NULL</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>collector_event_id</code></td><td class="nowrap">INTEGER 主キー</td><td class="nowrap">不可</td><td>番号</td></tr>
+<tr><td class="nowrap"><code>occurred_at</code></td><td class="nowrap">TEXT(23)</td><td class="nowrap">不可</td><td>発生時刻（JST）</td></tr>
+<tr><td class="nowrap"><code>event_kind</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td><td>種別。現在の値は <code>start</code>・<code>stop</code>・<code>error</code>・<code>backup</code> の 4 つ（制約は付けていない）</td></tr>
+<tr><td class="nowrap"><code>event_message</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td><td>内容（日本語の文）</td></tr>
+</tbody>
+</table></div>
+<p>索引: <code>collector_event_ix_occurred_at</code>（<code>occurred_at</code>）。</p>
+
+<h3><code>versions</code>（版管理）</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>NULL</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>version_seq</code></td><td class="nowrap">INTEGER 主キー</td><td class="nowrap">不可</td><td>当てた版の番号</td></tr>
+<tr><td class="nowrap"><code>applied_at</code></td><td class="nowrap">TEXT(23)</td><td class="nowrap">不可</td><td>当てた時刻（JST）</td></tr>
+<tr><td class="nowrap"><code>script_name</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td><td>当てた SQL のファイル名</td></tr>
+<tr><td class="nowrap"><code>sql_sha256</code></td><td class="nowrap">TEXT</td><td class="nowrap">不可</td><td>SQL の指紋（SHA-256。64 文字の検査付き）</td></tr>
+</tbody>
+</table></div>
+<p>版 1 の SQL には含まれず、起動時にプログラムが <code>CREATE TABLE IF NOT EXISTS</code> で作る（「どこまで当てたか」を持つ表なので、SQL の中には置けない）。</p>
+
+<h2>命名と日時の決まり（<code>ai-chat-lite</code> に合わせる）</h2>
+<p>日時の形式と列名を、<code>ai-chat-lite</code> の DB 定義（設計書の「列名の付け方」「インデックスの名前」、版 1〜3 の SQL）に合わせる。<strong>決めたのは 10-06</strong>。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>決まり</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">日時</td><td>JST の <code>yyyy/mm/dd hh:mm:ss.ccc</code>、固定 23 文字の TEXT。列名の語尾は <code>_at</code>。<strong><code>CHECK (length(列) = 23)</code> を付ける</strong>。辞書順がそのまま時系列順になる</td></tr>
+<tr><td class="nowrap">主キーと外部キー</td><td>主キーは <code>&lt;テーブル名&gt;_id</code>（<code>id</code> だけにしない）。<strong>外部キーの列名は、参照先の主キーと同じ名前</strong>にする（<code>process_sample.process_snapshot_id</code> → <code>process_snapshot.process_snapshot_id</code>）</td></tr>
+<tr><td class="nowrap">略語</td><td>単体で読んで意味が取れる名前にする（<code>ts</code> → <code>measured_at</code>、<code>cmdline</code> → <code>command_line</code>）。<strong>許容する略語（10-06 に決定）</strong>: <code>pid</code>・<code>parent_pid</code>（OS の用語）、<code>phys</code>・<code>avail</code>、<code>exe_path</code>。<strong>単位の <code>_bytes</code> は、<code>system_memory</code> の列では付けない</strong>（版 1 の SQL の先頭に「サイズは byte」と書く）</td></tr>
+<tr><td class="nowrap">型名と同じ名前</td><td>避ける（<code>text</code> → <code>command_line_body</code>）。DDL が <code>text TEXT</code> になって読みにくい</td></tr>
+<tr><td class="nowrap">索引の名前</td><td><code>&lt;テーブル名&gt;_ix_&lt;列&gt;_&lt;列&gt;</code>（<code>sqlite_master</code> を並べると、テーブルごとにまとまる）</td></tr>
+<tr><td class="nowrap">真偽値</td><td>列名を <code>is_</code> で始め、<code>INTEGER</code>（0 / 1）に <code>CHECK (列 IN (0, 1))</code> を付ける（<code>is_admin</code>）。SQLite に真偽値の型は無いため</td></tr>
+<tr><td class="nowrap">取れなかった値</td><td><strong>NULL にする。0 や空文字で埋めない</strong>（前の「注」）</td></tr>
+<tr><td class="nowrap">テーブル名</td><td>単数のまま。<code>ai-chat-lite</code> は複数形（<code>messages</code>）だが、<code>system_memory</code> のように複数形が不自然なものがあるため、揃えない</td></tr>
+</tbody>
+</table></div>
+
+<h2>スキーマの版管理（<code>ai-chat-lite</code> に倣う）</h2>
+<p>DB の形は、版で管理する。<code>CREATE TABLE IF NOT EXISTS</code> は、既にあるテーブルを作り替えない。列の削除・型の変更は、テーブルを作り直すしかなく、そのたびに専用の手順を書くことになる。<strong>SQL を版ごとのフォルダに置き、<code>versions</code> テーブルに「どこまで当てたか」を持つ</strong>形にする。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>決まり</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">SQL の置き場</td><td><code>src/scripts/20_migrate/ver_000001/</code>、<code>ver_000002/</code> …（6 桁のゼロ埋め。共通ルールの置き場に従う）。1 つの版に複数の <code>.sql</code> を置け、名前順に当てる。<strong>実行ファイルに埋め込む</strong>（サービスは単独の実行ファイルで動かすため）</td></tr>
+<tr><td class="nowrap">番号は連続</td><td>飛んでいたら止める。飛んでいると、当て損ねに気づけない</td></tr>
+<tr><td class="nowrap">当てる時</td><td>起動時に、足りない分だけを順に当てる。<strong>1 つの版を 1 つのトランザクション</strong>で当て、失敗したら巻き戻して、起動を失敗させる（非 0 の終了コード）</td></tr>
+<tr><td class="nowrap">書き換えの検知</td><td>当て済みの SQL の指紋（SHA-256）を <code>versions</code> に持つ。<strong>当て済みの版が書き換えられていたら止める</strong>。環境ごとに形が違う状態になるのを防ぐ。変更は、新しい版として足す</td></tr>
+<tr><td class="nowrap">下りは持たない</td><td>SQLite は列の削除もできず、下りを正しく書き続けるのは重い。<strong>版を上げる前に、<code>VACUUM INTO</code> で控えを取り</strong>（<code>_backup/pre-ver-…</code>。毎日の 100 世代の整理の対象にしない）、戻すならそこから戻す</td></tr>
+<tr><td class="nowrap">初回</td><td>空の DB には、版 1 から順に当てる。<code>versions</code> が無いのに、すでにテーブルがある DB は、版 1 の形として記録する（当て直さない）</td></tr>
+</tbody>
+</table></div>
+
+<h2>CPU 使用率の出し方</h2>
+<p>1 回の値からは出ない。<strong>同じ起動時刻・同じ pid のプロセスの、前回の CPU 累計との差</strong>を、経過時間と論理 CPU 数で割って出す（タスクマネージャーと同じ、全体に対する割合）。前回が無いプロセス（新しく現れた）は NULL にする。pid は再利用されるため、起動時刻を必ず組み合わせる。</p>
+
+<h2>サイズの見積り（未測定の概算）</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>項目</th><th>見積り</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>system_memory</code></td><td>1 日 1,440 行 × 約 80 バイト ≒ 0.1 MB/日（年 約 40 MB）</td></tr>
+<tr><td class="nowrap"><code>process_sample</code></td><td>1 日 24 回 × 約 450 プロセス × 約 120 バイト ≒ 1.3 MB/日（年 約 470 MB）</td></tr>
+<tr><td class="nowrap"><code>command_line</code></td><td>重複を持たないため、増えるのは<strong>新しい文字列が現れた分だけ</strong>。同じ文字列を毎時間書くと、1 行 200〜2,000 バイトで年 数 GB になる見込みが、初回の分（数百 KB〜数 MB）と、起動のたびに変わるものの分に収まる（未測定）</td></tr>
+<tr><td class="nowrap">バックアップ</td><td>毎日 DB 全体を zip にするため、<strong>世代の合計は DB の成長とともに増える</strong>。半年後の DB が約 250 MB、zip で 1/4〜1/6 とすると、100 世代で約 5〜6 GB</td></tr>
+</tbody>
+</table></div>
+<p>実測してから、間引きや差分バックアップを判断する。</p>
+</section>
+
+<section class="ch04" id="ch04">
+<h1>動き</h1>
+
+<h2>収集</h2>
+<ul>
+<li><strong>1 分ごと</strong>: 毎分 0 秒に合わせて、システムのメモリを 1 行書く。スリープ明けなどで抜けた分は、さかのぼって埋めない（抜けたこと自体が、行の欠けとして残る）</li>
+<li><strong>1 時間ごと</strong>: 毎時 0 分に、全プロセスを 1 スナップショットとして書く。CPU 使用率は、同じ時刻の DB 内の前回分から計算する</li>
+<li><strong>起動した時刻から数えず、時計の区切りで動く</strong>（10-06 に追加）。10 秒間隔なら <code>:00 :10 :20</code> …、毎分は <code>hh:mm:00</code>、毎時は <code>hh:00:00</code>。起動が 00:12:34 で 10 秒間隔なら、<strong>最初の実行は 00:12:40</strong>。起動の途中の区切りは書かず、次の区切りから書く。ミリ秒の数 ms のずれは許容する（実測: 10 秒間隔で <code>:10.001</code>・<code>:20.000</code>）。次に動く時刻は、メモリとプロセスの区切りの近いほう。<strong>代償:</strong> 起動の直後に、メモリは最大 1 分、プロセスのスナップショットは最大 1 時間、行が無い期間ができる。試験で <code>--once</code> を使うときは、<code>--memory-interval-sec 1</code> を付けると待たない</li>
+<li><strong>コミット・ページファイルは OS ごとの取り方</strong>。Windows は <code>GetPerformanceInfo</code> 等（<code>windows-sys</code> で 1 関数）、Linux は <code>/proc/meminfo</code>、Mac は無い値を NULL にする</li>
+<li><strong>コマンドラインを記録する。</strong>サービスは <strong>LocalSystem</strong> で動かす想定。<strong>非管理者の実行ではコマンドラインが取れなかった前例がある</strong>（レポートで 267 件）ため、取れるかどうかは重要な確認点になる。取れなかったプロセスは NULL にし、<strong>取れなかった件数をスナップショットに残す</strong>（黙って欠けない）。全プロセスが見えるかは、実機で確かめる</li>
+</ul>
+
+<h2>バックアップ</h2>
+<ol>
+<li>毎日 23:59 に、<code>VACUUM INTO</code> で稼働中の DB から、整合の取れたコピーを 1 ファイルで作る（<code>-wal</code> / <code>-shm</code> を別に扱わなくてよい。10-04 に動作を確認済み）</li>
+<li>そのコピーを <code>PRAGMA integrity_check</code> で検査する</li>
+<li>zip（deflate）にして、一時名で書いてから <code>pc-memory-yyyymmdd.zip</code> へ名前を変える（途中で止まっても、壊れた zip を世代に残さない）</li>
+<li><strong>新しい世代を書き終えてから</strong>、古い世代を消す。100 を超えた分だけを、名前の古い順に消す</li>
+<li>結果を <code>collector_event</code> に書く。<strong>失敗したら、エラーとして残し、翌日の分を止めない</strong></li>
+</ol>
+
+<h2>サービス（Windows）</h2>
+<p><code>ai-chat-lite</code> の winsw の定義に倣う。</p>
+<ul>
+<li>実行ファイル名を専用の名前（<code>rust-ai-pc-memory-collector.exe</code>）にして、プロセス一覧で区別できるようにする</li>
+<li>異常終了（コード 0 以外）なら 10 秒後に再起動（3 段）。ログは <code>%BASE%\logs</code> にサイズで回す。自動起動</li>
+<li><strong>install は実体のフォルダで行う</strong>（subst のドライブはサービスから見えない）。管理者権限が要る</li>
+<li>致命的な失敗（DB が開けない等）は、<strong>0 以外の終了コードで終わり</strong>、再起動に任せる</li>
+<li>停止は <strong>Ctrl+C 相当</strong>（winsw の既定）で受け、停止イベントを DB に書いて終了コード 0 で終わる（10-04 に実機で確認）。<code>taskkill</code>（ウィンドウ向けの終了要求）では停止イベントが書かれないが、サービスの停止の経路ではない</li>
+</ul>
+
+<h2>検知（無言で止まらないために）</h2>
+<p>1 分ごとの行が<strong>そのまま生存確認</strong>になる。<strong>別の検知用タスク</strong>（<code>check-collector.ts</code>。10 分ごと）が、DB を読み取り専用で開いて次の 2 点を見る。結果は <code>logs/check-collector.log</code> に残す。</p>
+<ul>
+<li><code>system_memory</code> の最新の行が 3 分より古ければ異常</li>
+<li>直近の 23:59 の分のバックアップ（<code>pc-memory-yyyymmdd.zip</code>）が無ければ異常（作成中の 10 分は待つ。収集の開始が、そのスロットより後なら、まだ作る時刻が来ていないので正常）</li>
+</ul>
+<p>レポート生成の検知と同じく、<strong>最初の異常は「再確認待ち」としてログだけに残し、続けて異常のとき（次の 10 分後）だけ、トースト通知を出す</strong>（スリープ明けの一時的な遅れで通知しないため）。レポートの検知とは別のタスクで、検知の周期が違うため、コードも別にした。</p>
+
+<h2>設定</h2>
+<p>間隔・バックアップ時刻・DB の場所は、<strong>引数で変えられる</strong>形にする（テストで 1 秒間隔などに縮めるため）。既定は上の仕様どおり。</p>
+<p><strong><code>--times &lt;回数&gt;</code></strong> で、周期を指定の回数だけ回して終わる（<code>--once</code> は <code>--times 1</code> と同じ）。<strong>CPU 使用率は、同じプロセスが 2 回以上スナップショットに載らないと出ない</strong>ため、確かめるには <code>--memory-interval-sec 10 --process-interval-sec 10 --times 3</code> のように回す（非管理者の実測: 1 回目は全件 NULL、2 回目以降は読めた 307 件に値が入り、読めない 260 件は NULL のまま）。</p>
+</section>
+
+<section class="ch05" id="ch05">
+<h1>手順</h1>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>この計画の承認を受ける</td><td class="nowrap"><span class="badge b-ok">済</span>（10-04）</td></tr>
+<tr><td class="num">2</td><td>課題と README に着手を反映する</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">3</td><td><strong>技術の確認</strong>。<code>sysinfo</code> で、起動時刻・CPU 累計・メモリ・仮想メモリが取れ、管理者／サービスの権限で全プロセスが見えるかを、小さな試作で実測する（取れなければ、方式を見直す）</td><td class="nowrap"><span class="badge b-ok">済</span>（非管理者で: 起動時刻・CPU 累計・メモリ・仮想メモリ・exe・コマンドラインが取れた。<code>swap_total</code> はページファイルの合計と一致。<strong>スレッド数は取れず、列から外した</strong>。コマンドラインは 580 件中 310 件のみ（非管理者）。<strong>サービス権限での見え方は手順 11 で確かめる</strong>）</td></tr>
+<tr><td class="num">4</td><td><strong>先にテストを書く</strong>（<code>cargo test</code>）。版の当て方（空の DB・当て済み・書き換えの検知・失敗時の巻き戻し・番号の飛び）・テーブルの作成・CPU 使用率の計算・コマンドラインの重複排除と <code>~</code> への置換・分／時の合わせ方・世代の整理（105 件から 100 件）・バックアップが整合した zip になること</td><td class="nowrap"><span class="badge b-ok">済</span>（<code>cargo test</code> 60 件。実装前に落ちることを確認した）</td></tr>
+<tr><td class="num">5</td><td>版の当て方（<code>src/scripts/20_migrate/ver_000001/</code> の初期 SQL を含む）、DB・収集（メモリ・プロセス）・CPU 使用率を実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（実機で、580 プロセス・コマンドライン重複排除・CPU 使用率が 2 回目から入ることを確認。<strong>伏せ字の漏れ（Git bash 形式の <code>/c/Users/…</code>）を実データで見つけ、テストを足して直した</strong>）</td></tr>
+<tr><td class="num">6</td><td>周期の実行・イベントの記録・引数（間隔の変更）を実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（実機で、5 秒・20 秒の間隔で動作。Ctrl+C で停止イベントを書いて終了コード 0。<strong>強制終了後も DB は <code>ok</code></strong>）</td></tr>
+<tr><td class="num">7</td><td>バックアップ（<code>VACUUM INTO</code> → 検査 → zip → 世代の整理）を実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（実機で、指定した時刻ちょうどに zip が 1 つだけ作られた）</td></tr>
+<tr><td class="num">8</td><td>winsw の定義と、導入手順（管理者で install）を作る</td><td class="nowrap"><span class="badge b-ok">済</span>（作成のみ。<code>tools/80_ops/winsw/</code>・<code>tools/70_deploy/install-collector-service.cmd</code>・<code>tools/20_build/build-collector.cmd</code>。導入は手順 11）</td></tr>
+<tr><td class="num">9</td><td>検知を、先にテストを書いて作る。<strong>収集は別のタスク（10 分ごと）で検知する</strong>（<code>check-collector.ts</code>。<code>register-check-task.ps1 -Target collector</code>）</td><td class="nowrap"><span class="badge b-ok">済</span>（実物の DB で、正常 → 再確認待ち → 異常＋トーストの流れを確認。登録は手順 11）</td></tr>
+<tr><td class="num">10</td><td>テストの一括実行（<code>tools/40_test/run-tests.ps1</code>）に <code>cargo test</code> を加える</td><td class="nowrap"><span class="badge b-ok">済</span>（ps1・node・bun・cargo の全件が通る）</td></tr>
+<tr><td class="num">11</td><td><strong>実環境で確かめる（稼働）</strong>。サービスを install し、1 分ごとに行が増える・毎時にスナップショットが入る・プロセスを止めると 10 秒後に再起動する・再起動（OS）後に自動で起動する・止めると検知が異常を出す</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">12</td><td><strong>実環境で確かめる（バックアップ）</strong>。実際の 23:59 に zip ができ、翌日以降も世代が増え、100 を超えたら古い世代が消えること。<strong>待ち時間が要る</strong></td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">13</td><td>実測した待機メモリ・DB のサイズ・全プロセスの見え方を記録し、計画・課題へ反映する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">14</td><td><strong>命名と日時の形式を直す</strong>（上の「命名と日時の決まり」）。<strong>手順 11 の前に行う</strong>（導入のあとは、DB の版 1 を書き換えられない）。先にテストを書き（日時が 23 文字の JST で書かれる・読まれる、列名、主キーと外部キーの名前、索引名）、落ちるのを確かめてから、<code>001-initial.sql</code>・<code>db.rs</code>・<code>migrate.rs</code>・<code>backup.rs</code>・<code>check-collector.ts</code>・テストを直す。DB はまだ無いので、移行は要らない。<strong>あわせて、<code>process_snapshot.is_admin</code> を足す</strong>（昇格した権限で書いたか。テストは、昇格の判定を差し替えられる形にして、0 と 1 が書かれることを確かめる）。開始イベントのメッセージにも「昇格あり／なし」を書く</td><td class="nowrap"><span class="badge b-warn">着手</span>（実装とテストは済。全件が通る。<strong>非管理者の実機</strong>で、23 文字の JST・列名・索引名・<code>is_admin = 0</code>・開始イベントの「管理者権限なし」を確認。<strong>管理者・サービスで <code>is_admin = 1</code> になることは、導入のときに確かめる</strong>）</td></tr>
+</tbody>
+</table></div>
+<div class="callout callout-important">
+<strong>11・12 を終えるまで「済」にしない。</strong>手元の手動実行では、実行ユーザー（サービスは LocalSystem）・環境変数・PATH・カレントが違う。</div>
+</section>
+
+<section class="ch06" id="ch06">
+<h1>決めておくこととリスク</h1>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>扱い</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>sysinfo</code> で足りるか</td><td>CPU 累計・起動時刻・仮想メモリの取り方が OS で違う恐れがある（<strong>未確認</strong>）。手順 3 で実測し、足りない項目だけ OS の API（<code>windows-sys</code>）で補う</td></tr>
+<tr><td class="nowrap">全プロセスが見えるか</td><td>LocalSystem でも見えないプロセス（保護されたもの）がある恐れがある。<strong>見えなかった数を、スナップショットに残す</strong>（黙って欠けない）</td></tr>
+<tr><td class="nowrap">バックアップの総量</td><td>毎日 DB 全体を zip にするため、世代の合計は DB と共に増える。<strong>半年後に実測して</strong>、間引き（古いプロセス行の削除）や、週・月の世代の導入を判断する</td></tr>
+<tr><td class="nowrap">常駐プロセスの待機メモリ</td><td>std のみの実測は 4〜9 MB。<strong>実物（release ビルド・1.4 MB）の実測は WS 11.7 MB・プライベート 3.8 MB</strong>（10-04。サービスでの値は手順 13 で測り直す）。目安の 20 MB 以下を満たす</td></tr>
+<tr><td class="nowrap">無言で止まる</td><td>今回の失敗（10-04）と同じ種類。<strong>終了コードを 0 以外にする・イベントを DB に残す・1 分ごとの行を生存確認にして検知する</strong>の 3 点を、最初から入れる</td></tr>
+<tr><td class="nowrap">プライバシー</td><td>プロセス名・パス・コマンドラインは、ローカル PC 固有の情報。DB と zip は Git 管理外（<code>_</code>）に置き、<strong>パスとコマンドラインのユーザープロファイルは <code>~</code> に置換</strong>して書く（10-04 に決定）。<strong>外へ持ち出さない・共有しない</strong>前提</td></tr>
+<tr><td class="nowrap"><span class="badge b-ok">決定</span> コマンドラインの資格情報</td><td>引数にトークン・パスワード・API キーが入るプロセスがある（<code>--token</code>・<code>--password</code>・<code>Authorization:</code> 等）。<strong>置き換えずに、そのまま残す</strong>（10-04 に決定）。<strong>DB・バックアップの zip・<code>pre-ver-…</code> の控えは、資格情報を含みうる</strong>ため、外へ持ち出さない・共有しない・Git に入れない。共通ルールの「資格情報をファイルに書かない」からの<strong>例外</strong>になるので、ローカルルールに差分として書く（実装の完了時。指示を受けてから）</td></tr>
+<tr><td class="nowrap">スリープ・休止</td><td>抜けた分はさかのぼって埋めない。行の欠けとして残る（時系列の欠損がそのまま事実になる）</td></tr>
+<tr><td class="nowrap">winsw の実行ファイル</td><td>Git に入れない。<code>ai-chat-lite</code> から複製する手順を、導入手順に書く</td></tr>
+<tr><td class="nowrap">Linux・Mac</td><td>収集部を OS ごとに分け、Windows 以外はビルドが通る形までにとどめる。サービス化（systemd・launchd）は別の計画で扱う</td></tr>
+</tbody>
+</table></div>
+</section>
+
+</div>
+
+<footer>
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+プロセスメモリ調査 ／ 計画: メモリの時系列収集
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>レポート生成漏れの検知 — 計画</title>
+<style>
+	:root{
+		--navy1:#12224d; --navy2:#2f5fbf;
+		--ink:#1c2330; --ink-soft:#4a5568; --line:#d9dfe8; --code-bg:#f4f6fa;
+		--link:#1a4fa0;
+		--accent:#12224d; --accent2:#2f5fbf; --soft:#f2f5fb;
+	}
+	.ch01{--accent:hsl(280,78%,25%);--accent2:hsl(280,58%,55%);--soft:hsl(280,28%,95%);}
+	.ch02{--accent:hsl(210,78%,25%);--accent2:hsl(210,58%,55%);--soft:hsl(210,28%,95%);}
+	.ch03{--accent:hsl(140,78%,25%);--accent2:hsl(140,58%,55%);--soft:hsl(140,28%,95%);}
+	.ch04{--accent:hsl(70,78%,25%);--accent2:hsl(70,58%,55%);--soft:hsl(70,28%,95%);}
+	.ch05{--accent:hsl(0,78%,25%);--accent2:hsl(0,58%,55%);--soft:hsl(0,28%,95%);}
+
+	*{box-sizing:border-box;}
+	body{margin:0;background:#fff;color:#1c2330;
+		font-family:"Yu Gothic UI","Meiryo","Segoe UI",system-ui,sans-serif;
+		font-size:15.5px;line-height:1.85;}
+
+	.titlebar{background:linear-gradient(135deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));color:#fff;padding:34px 30px 30px;}
+	.titlebar .inner{max-width:1600px;margin:0 auto;}
+	.titlebar h1{font-size:1.9em;margin:0 0 8px;color:#fff;}
+	.titlebar .lead{font-size:.92em;color:#dde6f7;background:transparent;}
+	.titlebar .date{font-size:.88em;color:#c9d8f2;background:transparent;margin-top:6px;}
+
+	.wrap{max-width:1600px;margin:0 auto;padding:0 30px;}
+
+	a{color:var(--link,#1a4fa0);background:transparent;}
+
+	.toc{margin:26px 0 0;}
+	.toc ol{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:12px 0 0;counter-reset:tocn;}
+	.toc li{counter-increment:tocn;}
+	.toc a{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+		text-overflow:ellipsis;white-space:normal;width:310px;max-width:100%;
+		background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;text-decoration:none;padding:8px 12px;border-radius:6px;font-weight:700;font-size:.92em;}
+	.toc a::before{content:counter(tocn) ". ";font-weight:700;}
+
+	section{background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border:1px solid var(--line,#d9dfe8);border-radius:10px;padding:4px 26px 26px;margin:34px 0;}
+	section h1{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:14px 20px;margin:26px 0 20px;border-radius:8px;
+		box-shadow:0 3px 10px rgba(18,34,77,.22);font-size:1.4em;}
+	h2{background:linear-gradient(90deg,var(--soft,#f2f5fb),#fff);color:var(--accent,#12224d);
+		border-left:6px solid var(--accent,#12224d);padding:6px 12px;margin:30px 0 12px;
+		font-size:1.12em;border-radius:0 6px 6px 0;}
+	h3{display:inline-block;color:var(--accent,#12224d);background:transparent;
+		border-bottom:2px dotted var(--accent2,#2f5fbf);padding-bottom:3px;margin:20px 0 8px;font-size:1em;}
+	p{background:transparent;color:var(--ink,#1c2330);}
+
+	.tablewrap{overflow-x:auto;margin:12px 0;}
+	table{border-collapse:collapse;width:100%;background:#fff;color:var(--ink,#1c2330);
+		border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(18,34,77,.10);font-size:.92em;
+		line-height:1.5;}
+	th{background:linear-gradient(100deg,var(--accent,#12224d),var(--accent2,#2f5fbf));
+		color:#fff;padding:6px 11px;text-align:left;white-space:nowrap;font-weight:700;}
+	td{padding:6px 11px;border-bottom:1px solid var(--line,#d9dfe8);vertical-align:top;
+		background:transparent;color:var(--ink,#1c2330);}
+	tr:nth-child(even) td{background:#fafbfe;color:var(--ink,#1c2330);}
+	td.num{text-align:right;white-space:nowrap;}
+	td.nowrap{white-space:nowrap;}
+
+	.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.82em;font-weight:700;
+		white-space:nowrap;color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+	.b-ok{color:#fff;background:linear-gradient(100deg,#1d7a3c,#45b56c);}
+	.b-ng{color:#fff;background:linear-gradient(100deg,#a51f22,#e05a5c);}
+	.b-warn{color:#fff;background:linear-gradient(100deg,#b8620a,#f0a548);}
+	.b-none{color:#fff;background:linear-gradient(100deg,#5a6472,#97a1ae);}
+
+	.callout{border-left:6px solid var(--accent,#12224d);
+		background:linear-gradient(180deg,var(--soft,#f2f5fb),#fff);color:var(--ink,#1c2330);
+		border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+	.callout strong{color:var(--accent,#12224d);background:transparent;}
+
+	code{background:var(--code-bg,#f4f6fa);border:1px solid var(--line,#d9dfe8);color:#17335f;
+		padding:1px 5px;border-radius:4px;font-size:.92em;
+		font-family:Consolas,"Courier New",monospace;}
+	pre{background:#fff;color:var(--ink,#1c2330);border:1px solid var(--line,#d9dfe8);
+		border-left:5px solid var(--accent2,#2f5fbf);border-radius:0 8px 8px 0;
+		padding:13px 16px;overflow-x:auto;font-size:.9em;line-height:1.6;
+		font-family:Consolas,"Courier New",monospace;}
+	pre code{background:transparent;border:none;color:var(--ink,#1c2330);padding:0;}
+
+	ul,ol{background:transparent;color:var(--ink,#1c2330);}
+
+	footer{max-width:1600px;margin:40px auto 0;padding:18px 30px 0;
+		border-top:1px solid var(--line,#d9dfe8);color:var(--ink-soft,#4a5568);
+		background:#fff;font-size:.88em;}
+
+	.back-home{display:inline-block;padding:6px 10px;border-radius:6px;
+		background:linear-gradient(100deg,var(--navy1,#12224d),var(--navy2,#2f5fbf));
+		color:#fff;text-decoration:none;line-height:0;}
+	.wrap > .back-home{margin-top:18px;}
+</style>
+</head>
+<body>
+
+<div class="titlebar"><div class="inner">
+<h1>レポート生成漏れの検知 — 計画</h1>
+<div class="lead">セッションに頼らず、定時のレポートが作られなかったことを検知して知らせる</div>
+<div class="date">📅 作成: 2026-10-04 / 更新: 2026-10-04</div>
+</div></div>
+
+<div class="wrap">
+
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+
+<nav class="toc">
+<ol>
+<li class="ch01"><a href="#ch01">この計画について</a></li>
+<li class="ch02"><a href="#ch02">いまの状態</a></li>
+<li class="ch03"><a href="#ch03">作るもの</a></li>
+<li class="ch04"><a href="#ch04">手順</a></li>
+<li class="ch05"><a href="#ch05">決めておくこととリスク</a></li>
+</ol>
+</nav>
+
+<section class="ch01" id="ch01">
+<h1>この計画について</h1>
+
+<h2>目的</h2>
+<p>6 時間ごとのレポート生成が止まったとき、<strong>人もセッションも介さずに</strong>検知し、画面への通知とログで知らせる。あわせて、<strong>起動の組み立て（いまの cmd の中身）を node（TypeScript）へ移し</strong>、ログの文字コードを UTF-8 の 1 種類に揃える。</p>
+
+<h2>きっかけ</h2>
+<p>2026-09-29 から 10-04 まで、約 22 回分のレポートが作られなかった。タスクスケジューラの履歴は「完了」のままで、気づいたのは約 5 日後だった。確認の手段は、セッションの中だけで動く cron の 1 本だけで、<strong>セッションが止まった間は、誰も見ていなかった。</strong>経緯と原因は課題 <a href="../40_issues/issues.html">i261004-01</a> に書いた。</p>
+
+<h2>この計画でやらないこと</h2>
+<ul>
+<li><strong>生成タスクの登録の変更</strong>。タスクが指す <code>tools/80_ops/inspect-process-memory.cmd</code> と引数 <code>nopause</code> は変えない（中身を node 呼び出しにするだけで、再登録は要らない）。実行時刻・実行ユーザーも変えない</li>
+<li><strong><code>inspect-process-memory.ps1</code> の書き換え</strong>。プロセス・メモリの取得は PowerShell が合っており、動作も確かめ済みのため、そのまま使う</li>
+<li><strong>検知用タスク自身が止まったことの検知</strong>。検知の検知は作らない。生成と検知を別のタスクにして、同時に壊れる確率を下げるところまでにする</li>
+</ul>
+</section>
+
+<section class="ch02" id="ch02">
+<h1>いまの状態</h1>
+
+<h2>生成の所要時間（10-04 の実測）</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>区間</th><th>所要</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">レポートの HTML が出るまで（ps1）</td><td class="nowrap">約 10〜15 秒</td></tr>
+<tr><td class="nowrap">ch06 が書き終わるまで（<code>claude -p</code>）</td><td class="nowrap">約 4 分半〜7 分半（4 分 33 秒・7 分 21 秒）</td></tr>
+</tbody>
+</table></div>
+<p>5 分後に ch06 まで見ると、遅い日は誤報になる。<strong>確認は生成予定の 15 分後にする</strong>（いまのセッション cron と同じ :15）。</p>
+
+<h2>検知の手段（いま）</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>手段</th><th>弱点</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">セッションの cron（毎 :15）</td><td>セッションの中でしか動かない。止まっていた間は発火しない。7 日で失効する</td></tr>
+<tr><td class="nowrap">タスクスケジューラの履歴</td><td>即終了でも「完了・終了コード 0」に見える（終了コードは 10-04 に非 0 を返す形へ直した）</td></tr>
+</tbody>
+</table></div>
+</section>
+
+<section class="ch03" id="ch03">
+<h1>作るもの</h1>
+
+<h2>言語の分担</h2>
+<p>起動の組み立てと検知を、<strong>node（TypeScript）</strong>で書く。<code>.ts</code> は node がそのまま実行する（この環境の node v26.10.0 で実測）。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>役目</th><th>言語</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">起動の組み立て（subst・カレント・ps1 と <code>claude -p</code> の起動・ログ・終了コード）</td><td class="nowrap">node（TypeScript）</td><td>ログを UTF-8 の 1 種類で書ける。cmd の <code>call</code> 漏れ・遅延展開・終了コードの癖が無くなる。<code>node:test</code> で先にテストを書ける</td></tr>
+<tr><td class="nowrap">検知（生成漏れの判定・ログ・通知の起動）</td><td class="nowrap">node（TypeScript）</td><td>ファイルを読むだけで、プロセス情報は使わない。テストできる</td></tr>
+<tr><td class="nowrap">プロセス・メモリの取得（レポート生成）</td><td class="nowrap">PowerShell（既存の ps1）</td><td>Windows のプロセス情報の取得に合う。動作確認済みで、書き換える利点が無い</td></tr>
+<tr><td class="nowrap">トースト通知</td><td class="nowrap">PowerShell を呼ぶ</td><td>node に標準のトースト機能は無い。追加の npm パッケージを避け、<code>-EncodedCommand</code> で渡して、コードページに依存させない</td></tr>
+<tr><td class="nowrap">起動役（<code>inspect-process-memory.cmd</code>）</td><td class="nowrap">cmd（薄く）</td><td><code>node</code> を呼んで終了コードを返すだけ。タスクの登録（このファイルを指す）を変えずに済む</td></tr>
+</tbody>
+</table></div>
+
+<h2>作るファイル</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>ファイル</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>tools/80_ops/lib/</code></td><td>共有の部品。ログ（JST・ミリ秒・UTF-8・ユーザープロファイルの伏せ字）、引数の解釈、レポート判定の純粋な関数</td></tr>
+<tr><td class="nowrap"><code>tools/80_ops/inspect-process-memory.ts</code></td><td>起動の組み立て。いまの cmd の中身（引数 <code>nopause</code> <code>noai</code> <code>model:</code> <code>effort:</code> は同じ意味）</td></tr>
+<tr><td class="nowrap"><code>tools/80_ops/check-report.ts</code></td><td>検知。<code>logs/check-report.log</code> に記録し、異常のときだけトーストを出す</td></tr>
+<tr><td class="nowrap"><code>tests/*.test.ts</code></td><td><code>node:test</code> のテスト。<code>tools/40_test/run-tests.ps1</code> から一括で動かす</td></tr>
+<tr><td class="nowrap"><code>tools/80_ops/register-check-task.ps1</code></td><td>検知用タスクの登録（管理者で実行）。既存の登録スクリプトと同じ形にする</td></tr>
+</tbody>
+</table></div>
+<p>ログは 2 本に分ける。<code>logs/task-run.log</code>（生成の経過。<code>claude -p</code> の出力も入る）と <code>logs/check-report.log</code>（検知の結果）。<strong>どちらも UTF-8 の 1 種類</strong>で書く。</p>
+
+<h2>検知用のタスク</h2>
+<p>タスクスケジューラに、生成タスクとは別のタスクを足す。<strong>毎日 0:15・0:45・6:15・6:45・12:15・12:45・18:15・18:45</strong> に動き、次の 2 点を見る。</p>
+<ol>
+<li>直近の予定時刻（0・6・12・18 時）<strong>以降に生成されたレポート</strong>が <code>logs/reports-admin.txt</code> にあるか</li>
+<li>そのレポートに <code>ch06</code> があるか</li>
+</ol>
+<p>手動で作ったレポートは、予定時刻以降なら 1 に数える。「最終行が新しいか」ではなく「予定時刻以降のものがあるか」で見る。</p>
+
+<h3>2 回の確認（10-04 に決定）</h3>
+<p>10-04 の 18:00 の分は、PC がスリープ中で、復帰した 18:17:59 に遅れて実行された。:15 に 1 回だけ確認すると、この遅れを<strong>誤って異常</strong>と判定する。このため、<strong>:15 の異常は通知せず、:45 の再確認でもなお異常のときだけ通知する</strong>。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>時刻</th><th>異常のとき</th><th>ログの 1 行</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">:15（最初の確認）</td><td>通知しない</td><td><code>⚠️ 再確認待ち …</code></td></tr>
+<tr><td class="nowrap">:45（再確認。:30 以降）</td><td>トースト通知する</td><td><code>❌ 異常 …</code></td></tr>
+</tbody>
+</table></div>
+<p>最終かどうかは、確認した時刻の「分」で決める（30 分以降なら最終）。タスクは同じコマンドで、時刻だけが違う。</p>
+
+<h2>知らせ方</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>方法</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">ログ</td><td><code>logs/</code> に、確認の時刻・結果・理由を 1 行ずつ追記する。<strong>異常のときだけでなく、正常のときも残す</strong>（検知用タスク自身が動いたことの証拠になる）</td></tr>
+<tr><td class="nowrap">トースト通知</td><td>異常のときだけ、画面右下に出す。Windows PowerShell 5.1 から、追加のモジュールなしで出せる。<strong>10-04 に実機で表示を確認した</strong>。「ログを開く」ボタンで <code>check-report.log</code> を開く</td></tr>
+</tbody>
+</table></div>
+
+<h2>実行の条件</h2>
+<p>トーストは、<strong>ユーザーがログオンしているデスクトップにしか出ない</strong>と考えている（未確認）。生成タスクは「ログオンしているかどうかにかかわらず実行する」設定だが、検知用タスクは<strong>「ユーザーがログオンしているときのみ実行する」にする</strong>。ログオンしていないときは、ログだけが残る。</p>
+
+<h2>通知をクリックしたときの動作</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>動作</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td>ログのファイルを開く（URI を起動する形）</td><td class="nowrap"><span class="badge b-ok">採用</span>（10-04 に実機で、ボタンからログが開くことを確認）</td></tr>
+<tr><td>バッチ・スクリプトを実行する</td><td class="nowrap"><span class="badge b-none">採用しない</span>（独自プロトコルのレジストリ登録が要り、今回の目的に対して過大）</td></tr>
+</tbody>
+</table></div>
+<p>ログの文字コードが混在していると、開いたときに化ける（10-04 に確認）。<strong>UTF-8 の 1 種類に揃えるのは、このためでもある。</strong></p>
+</section>
+
+<section class="ch04" id="ch04">
+<h1>手順</h1>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>この計画の承認を受ける（10-04 に事前承認済み）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">2</td><td>課題に着手を反映する</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">3</td><td><strong>先にテストを書く</strong>。引数の解釈・時刻の整形・伏せ字・レポート判定の関数を、落ちることを見てから実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（27 件。node・bun とも成功。型チェックも成功）</td></tr>
+<tr><td class="num">4</td><td>共有の部品（<code>tools/80_ops/lib/</code>）と、検知（<code>check-report.ts</code>）を作る</td><td class="nowrap"><span class="badge b-ok">済</span>（実データで正常・異常を確認）</td></tr>
+<tr><td class="num">5</td><td>起動の組み立て（<code>inspect-process-memory.ts</code>）を作り、<code>inspect-process-memory.cmd</code> を薄い起動役にする。手動の実行（<code>noai</code>）で、レポートの生成・ログ・終了コードを確かめる</td><td class="nowrap"><span class="badge b-ok">済</span>（手動の <code>noai</code> と AI ありの両方で確認。AI あり: 2 分 42 秒、ch06 まで、終了行あり、ログは UTF-8 のみ）</td></tr>
+<tr><td class="num">6</td><td>タスクの登録スクリプトを作る。<code>-CheckArgs</code> で、確認用のタスクを別名で登録できる</td><td class="nowrap"><span class="badge b-ok">済</span>（作成のみ。登録は手順 8）</td></tr>
+<tr><td class="num">7</td><td><strong>実環境で確かめる（生成側）</strong>。生成タスクを<strong>タスクスケジューラから</strong>動かし、ログが UTF-8 の 1 種類で、ch06 まで書かれることを確認する</td><td class="nowrap"><span class="badge b-ok">済</span>（10-04 12:00 の定時実行。12:00:01 起動・12:04:10 完了、リターンコード 0。ch06 あり、<code>task-run.log</code> は UTF-8 で終了行まで残った）</td></tr>
+<tr><td class="num">8</td><td><strong>実環境で確かめる（検知側）</strong>。検知用タスクを登録し、生成漏れを意図的に作って<strong>タスクスケジューラから</strong>動かし、ログとトーストが出ることを確認する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">9</td><td>実際の定時（:15）に動くことを、ログで確認する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">10</td><td>結果を計画・課題に反映する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+</tbody>
+</table></div>
+<div class="callout callout-important">
+<strong>7・8・9 を終えるまで「済」にしない。</strong>手元の手動実行では、実行ユーザー・環境変数・PATH・カレントが違う。今回の失敗は、この確認を省いたことから始まった。</div>
+</section>
+
+<section class="ch05" id="ch05">
+<h1>決めておくこととリスク</h1>
+<div class="tablewrap"><table>
+<thead><tr><th>論点</th><th>扱い</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">通知の見逃し</td><td>トーストは消える。ログに必ず残し、<strong>セッションを開いたときに、最新の確認結果を読む</strong>手順をローカルルールに書く（指示を受けてから）</td></tr>
+<tr><td class="nowrap">ログオンしていない時間帯</td><td>トーストは出ない。ログに残るので、次にログオンしたときに読める</td></tr>
+<tr><td class="nowrap">検知用タスクが止まる</td><td>検知の検知は作らない。ログに「正常」も毎回残るため、記録が途切れていれば、後から分かる</td></tr>
+<tr><td class="nowrap">実行ユーザーのログイン期限切れ</td><td>生成タスクが <code>Login expired</code> で失敗するのも、ch06 が無いこととして検知できる。原因の切り分けは生成側のログ（<code>logs/task-run.log</code>）で行う</td></tr>
+<tr><td class="nowrap">node の前提</td><td><code>.ts</code> の直接実行には新しめの node が要る。この PC は v26.10.0 で、システム PATH（<code>C:\Tools\nodejs</code>）にあり、2 つの実行ユーザーとも見つかることをログで確認した。cmd はすでに <code>node -p</code> を使っており、新しい前提ではない</td></tr>
+<tr><td class="nowrap">動いている流れの置き換え</td><td>cmd の中身を node に替えるため、生成が止まる恐れがある。<strong>実環境（タスク経由）で ch06 まで書かれることを確かめるまで、旧 cmd の中身を Git の履歴に残す</strong>（戻せるようにする）</td></tr>
+<tr><td class="nowrap">PowerShell 5.1 の出力</td><td>ps1 の出力を node で受けると CP932 になる。<strong>ps1 の出力は受けず、終了コードだけを見る</strong>（画面には出る）</td></tr>
+</tbody>
+</table></div>
+</section>
+
+</div>
+
+<footer>
+<a class="back-home" href="../../README.html" aria-label="README へ戻る"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8L8 2L14 8M4 6.5V14H12V6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+プロセスメモリ調査 ／ 計画: レポート生成漏れの検知
+</footer>
+
+</body>
+</html>

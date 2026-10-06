@@ -1,0 +1,46 @@
+<service>
+  <id>rust-ai-pc-memory-collector</id>
+  <name> ai-pc-memory-collector（メモリの時系列収集）</name>
+  <description>システム全体のメモリを 1 分ごと、全プロセスの状態を 1 時間ごとに SQLite へ書き、毎日バックアップする</description>
+
+  <!--
+    ai-chat-lite の winsw の定義に倣う。
+    このファイルは winsw の実行ファイルと同じ名前（拡張子だけ .xml）で、同じフォルダ（_bin/）に置く。
+    パスは書かない。WinSW は相対パスを自分の実行ファイルがある場所（%BASE%）から解決する。
+
+    install は実体のフォルダ（C:\...）で行う。W: は subst の仮想ドライブで、
+    サービスからは見えず、ImagePath に W:\... が記録されると起動に失敗する。
+  -->
+  <executable>rust-ai-pc-memory-collector.exe</executable>
+
+  <!-- ベースはプロジェクトのルート（_bin の 1 つ上）。DB は _data/、バックアップは _backup/ -->
+  <arguments>--base-dir "%BASE%\.."</arguments>
+
+  <!--
+    logpath の相対パスは「サービスのカレントディレクトリ」を基準に解決され、C:\Windows\System32 になってしまう。
+    %BASE% は WinSW の実行ファイルがあるフォルダを指すため、これを前に付ける。
+    標準出力・標準エラーがここへ回る。収集の経過（スナップショット・バックアップ・エラー）は日時（JST）付きで出る。
+  -->
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+
+  <!--
+    異常終了（終了コード 0 以外）したら 10 秒後に立ち上げ直す。終了コード 0 は正常終了とみなされ、再起動されない。
+    DB が開けない・版を当てられない・書き込みが続けて失敗する、のときは非 0 で終わるため、ここで再起動される。
+    Windows のサービス回復は 3 段階。3 つ書けば 3 段目まで埋まり、何度落としても再起動される。
+  -->
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+
+  <!-- 1 分間動き続けたら失敗の回数を数え直す -->
+  <resetfailure>1 min</resetfailure>
+
+  <startmode>Automatic</startmode>
+
+  <!-- 停止のときは Ctrl+C 相当を送る。収集は次の確認で停止イベントを書いて、DB を閉じて終わる -->
+  <stopparentprocessfirst>true</stopparentprocessfirst>
+</service>

@@ -37,6 +37,46 @@ foreach ($f in $files) {
 	}
 }
 
+# node:test のテスト（*.test.ts）。対象は絶対パスで渡す（$testDir は上で存在を確かめ済み）。
+# bun がある環境では bun test でも通ることを確かめる
+$nodeTests = @(Get-ChildItem -LiteralPath $testDir -Filter '*.test.ts' -File)
+if ($nodeTests.Count -gt 0) {
+	Write-Host ''
+	Write-Host ('=== node --test（' + $nodeTests.Count + ' ファイル）===')
+	node --test $testDir
+	if ($LASTEXITCODE -ne 0) {
+		$ng += 1
+		$ngFiles += 'node --test'
+	}
+	if (Get-Command bun -ErrorAction SilentlyContinue) {
+		Write-Host ''
+		Write-Host '=== bun test ==='
+		bun test $testDir
+		if ($LASTEXITCODE -ne 0) {
+			$ng += 1
+			$ngFiles += 'bun test'
+		}
+	}
+}
+
+# Rust（src/pc-memory-collector）のテスト。MSVC ツールチェーンは tools/20_build/rust-env.ps1 で指す
+$collectorDir = Join-Path $root 'src/pc-memory-collector'
+if (Test-Path -LiteralPath (Join-Path $collectorDir 'Cargo.toml')) {
+	. (Join-Path $root 'tools/20_build/rust-env.ps1')
+	Write-Host ''
+	Write-Host '=== cargo test（src/pc-memory-collector）==='
+	Push-Location $collectorDir
+	try {
+		& (Use-RustMsvc) test --no-fail-fast
+		if ($LASTEXITCODE -ne 0) {
+			$ng += 1
+			$ngFiles += 'cargo test'
+		}
+	} finally {
+		Pop-Location
+	}
+}
+
 Write-Host ''
 if ($ng -eq 0) {
 	Write-Host ('全件成功（' + $files.Count + ' 本）')

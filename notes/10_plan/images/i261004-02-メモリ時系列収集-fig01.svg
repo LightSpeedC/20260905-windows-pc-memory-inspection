@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="テーブルの関係図（ER 図）" font-family="sans-serif">
+<defs>
+<linearGradient id="i1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
+<linearGradient id="i2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(220,78%,25%)"/><stop offset="1" stop-color="hsl(220,58%,55%)"/></linearGradient>
+<linearGradient id="i3" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(160,78%,25%)"/><stop offset="1" stop-color="hsl(160,58%,55%)"/></linearGradient>
+<linearGradient id="i4" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(100,78%,25%)"/><stop offset="1" stop-color="hsl(100,58%,55%)"/></linearGradient>
+<linearGradient id="i5" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(40,78%,25%)"/><stop offset="1" stop-color="hsl(40,58%,55%)"/></linearGradient>
+<linearGradient id="i6" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(0,78%,25%)"/><stop offset="1" stop-color="hsl(0,58%,55%)"/></linearGradient>
+</defs>
+	<rect width="100%" height="100%" fill="#ffffff"/>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g font-size="13">
+
+
+<g stroke="#4a5568" stroke-width="2" fill="none">
+<line x1="260" y1="60" x2="340" y2="60"/>
+<polyline points="620,180 660,180 660,60 700,60"/>
+</g>
+<g fill="#1c2330" font-weight="700" font-size="14">
+<text x="266" y="52">1</text><text x="324" y="52">n</text>
+<text x="626" y="172">n</text><text x="684" y="52">1</text>
+</g>
+<g fill="#4a5568" font-size="11">
+<text x="668" y="130">command_line_id</text>
+</g>
+
+
+<rect x="20" y="20" width="240" height="156" fill="#fff" stroke="hsl(280,78%,25%)" stroke-width="2"/>
+<rect x="20" y="20" width="240" height="28" fill="url(#i1)"/>
+<text x="32" y="39" fill="#fff" font-weight="700">process_snapshot（毎時）</text>
+<g fill="#1c2330">
+<text x="32" y="64">process_snapshot_id</text><text x="32" y="84">measured_at</text><text x="32" y="104">logical_cpu_count</text><text x="32" y="124">process_count</text><text x="32" y="144">command_line_unreadable_count</text><text x="32" y="164">is_admin</text>
+</g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="250" y="64">PK</text></g>
+
+
+<rect x="340" y="20" width="280" height="256" fill="#fff" stroke="hsl(220,78%,25%)" stroke-width="2"/>
+<rect x="340" y="20" width="280" height="28" fill="url(#i2)"/>
+<text x="352" y="39" fill="#fff" font-weight="700">process_sample（1 件 = 1 プロセス）</text>
+<g fill="#1c2330">
+<text x="352" y="64">process_snapshot_id</text><text x="352" y="84">pid</text><text x="352" y="104">started_at</text><text x="352" y="124">parent_pid</text><text x="352" y="144">process_name</text><text x="352" y="164">exe_path</text><text x="352" y="184">command_line_id</text><text x="352" y="204">cpu_total_ms</text><text x="352" y="224">cpu_percent</text><text x="352" y="244">memory_bytes</text><text x="352" y="264">virtual_bytes</text>
+</g>
+<g fill="#4a5568" font-size="11" text-anchor="end">
+<text x="610" y="64">PK FK</text><text x="610" y="84">PK</text><text x="610" y="104">PK</text><text x="610" y="124">NULL 可</text><text x="610" y="164">NULL 可</text><text x="610" y="184">FK・NULL 可</text><text x="610" y="204">NULL 可</text><text x="610" y="224">NULL 可</text><text x="610" y="244">NULL 可</text><text x="610" y="264">NULL 可</text>
+</g>
+
+
+<rect x="700" y="20" width="220" height="76" fill="#fff" stroke="hsl(160,78%,25%)" stroke-width="2"/>
+<rect x="700" y="20" width="220" height="28" fill="url(#i3)"/>
+<text x="712" y="39" fill="#fff" font-weight="700">command_line（辞書）</text>
+<g fill="#1c2330"><text x="712" y="64">command_line_id</text><text x="712" y="84">command_line_body</text></g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="910" y="64">PK</text><text x="910" y="84">UNIQUE</text></g>
+
+<text x="20" y="324" fill="#4a5568" font-size="12">下の 3 つは単独のテーブル（他のテーブルとは外部キーで結ばない）</text>
+
+
+<rect x="20" y="340" width="240" height="176" fill="#fff" stroke="hsl(100,78%,25%)" stroke-width="2"/>
+<rect x="20" y="340" width="240" height="28" fill="url(#i4)"/>
+<text x="32" y="359" fill="#fff" font-weight="700">system_memory（毎分）</text>
+<g fill="#1c2330">
+<text x="32" y="384">measured_at</text><text x="32" y="404">phys_total</text><text x="32" y="424">phys_avail</text><text x="32" y="444">swap_total</text><text x="32" y="464">swap_used</text><text x="32" y="484">commit_limit</text><text x="32" y="504">commit_used</text>
+</g>
+<g fill="#4a5568" font-size="11" text-anchor="end">
+<text x="250" y="384">PK</text><text x="250" y="444">NULL 可</text><text x="250" y="464">NULL 可</text><text x="250" y="484">NULL 可</text><text x="250" y="504">NULL 可</text>
+</g>
+
+
+<rect x="340" y="340" width="280" height="116" fill="#fff" stroke="hsl(40,78%,25%)" stroke-width="2"/>
+<rect x="340" y="340" width="280" height="28" fill="url(#i5)"/>
+<text x="352" y="359" fill="#fff" font-weight="700">collector_event（出来事の記録）</text>
+<g fill="#1c2330"><text x="352" y="384">collector_event_id</text><text x="352" y="404">occurred_at</text><text x="352" y="424">event_kind</text><text x="352" y="444">event_message</text></g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="610" y="384">PK</text></g>
+
+
+<rect x="700" y="340" width="240" height="116" fill="#fff" stroke="hsl(0,78%,25%)" stroke-width="2"/>
+<rect x="700" y="340" width="240" height="28" fill="url(#i6)"/>
+<text x="712" y="359" fill="#fff" font-weight="700">versions（版管理）</text>
+<g fill="#1c2330"><text x="712" y="384">version_seq</text><text x="712" y="404">applied_at</text><text x="712" y="424">script_name</text><text x="712" y="444">sql_sha256</text></g>
+<g fill="#4a5568" font-size="11" text-anchor="end"><text x="930" y="384">PK</text></g>
+</g>
+</svg>

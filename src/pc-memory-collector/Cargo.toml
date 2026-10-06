@@ -1,0 +1,26 @@
+[package]
+name = "rust-ai-pc-memory-collector"
+version = "0.1.0"
+edition = "2021"
+description = "メモリの時系列収集（1 分ごとのシステム全体・1 時間ごとの全プロセス）を SQLite に書く常駐プロセス"
+build = "build.rs"
+
+[dependencies]
+rusqlite = { version = "0.37", features = ["bundled"] }
+sysinfo = "0.37"
+zip = { version = "4", default-features = false, features = ["deflate"] }
+sha2 = "0.10"
+ctrlc = { version = "3", features = ["termination"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.60", features = ["Win32_System_ProcessStatus", "Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
