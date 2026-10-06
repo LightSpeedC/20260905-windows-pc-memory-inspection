@@ -17,10 +17,26 @@ pub fn open_and_migrate(db_path: &Path, backup_dir: &Path, now_ms: i64) -> Resul
     let mut conn = Connection::open(db_path).map_err(|e| format!("DB を開けません: {e}"))?;
     // WAL: 書き込みの最中でも、検知など別のプロセスが読める
     conn.query_row("PRAGMA journal_mode = WAL", [], |r| r.get::<_, String>(0)).map_err(|e| format!("DB の設定に失敗: {e}"))?;
-    conn.execute_batch("PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;")
+    // journal_size_limit: WAL の統合のあとに残す大きさの上限（64 MB）。開いたままの読み取りで一度大きくなっても、居座らせない
+    conn.execute_batch("PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON; PRAGMA journal_size_limit = 67108864;")
         .map_err(|e| format!("DB の設定に失敗: {e}"))?;
     migrate(&mut conn, &embedded_versions(), Some(backup_dir), now_ms)?;
     Ok(conn)
+}
+
+/// WAL を本体へ統合して、WAL の大きさを 0 に縮める（毎日のバックアップの前に行う）。
+/// 開いたままの読み取りがあると統合しきれずエラーを返す。呼び出し側は、収集を止めずに、イベントへ残す
+pub fn checkpoint_truncate(conn: &Connection) -> Result<(), String> {
+    // 待つのは短くする。読み取りが開いたままだと、5 秒の既定のまま待つ間、1 分ごとの収集が遅れる
+    conn.busy_timeout(std::time::Duration::from_secs(1)).map_err(|e| format!("DB の設定に失敗: {e}"))?;
+    let result = conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?)));
+    let _ = conn.busy_timeout(std::time::Duration::from_millis(5000));
+    match result {
+        // 先頭の値が 1 なら、読み取りに阻まれて、統合しきれなかった
+        Ok((0, _, _)) => Ok(()),
+        Ok((_, log, done)) => Err(format!("WAL を統合しきれませんでした（読み取りが開いたままです。{done} / {log} ページ）")),
+        Err(e) => Err(format!("WAL を統合できませんでした: {e}")),
+    }
 }
 
 pub fn insert_system_memory(conn: &Connection, ts_ms: i64, m: &SystemMemory) -> rusqlite::Result<()> {

@@ -1,5 +1,5 @@
 use rust_ai_pc_memory_collector::collect::{ProcessInfo, SystemMemory};
-use rust_ai_pc_memory_collector::db::{insert_snapshot, insert_system_memory, latest_system_memory_ts, open_and_migrate, record_event};
+use rust_ai_pc_memory_collector::db::{checkpoint_truncate, insert_snapshot, insert_system_memory, latest_system_memory_ts, open_and_migrate, record_event};
 use rust_ai_pc_memory_collector::timeutil::format_jst;
 use rusqlite::Connection;
 
@@ -288,6 +288,49 @@ fn 前回が読めなかったプロセスは_今回読めても_cpu_使用率�
     insert_snapshot(&mut c, 7_200_000, 8, false, &[proc(10, 1_000, "a.exe", Some("a"), 500_000)]).unwrap();
     let v: Option<f64> = c.query_row("SELECT cpu_percent FROM process_sample WHERE process_snapshot_id = 2", [], |r| r.get(0)).unwrap();
     assert_eq!(v, None, "前回の累計が無いのに差を出すと、全期間の CPU を 1 時間の使用率にしてしまう");
+}
+
+// WAL（-wal）は、開いたままの読み取りがあると統合が進まず、大きくなり続ける。いったん大きくなると、そのままの大きさで残る。
+// 上限を決め、毎日の掃除（TRUNCATE）で縮める
+#[test]
+fn wal_の大きさの上限を_64_mb_に決めている() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = open(dir.path());
+    let limit: i64 = c.query_row("PRAGMA journal_size_limit", [], |r| r.get(0)).unwrap();
+    assert_eq!(limit, 64 * 1024 * 1024);
+}
+
+fn wal_size(dir: &std::path::Path) -> u64 {
+    std::fs::metadata(dir.join("pc-memory.db-wal")).map(|m| m.len()).unwrap_or(0)
+}
+
+#[test]
+fn 毎日の掃除で_wal_が空になり_行は失われない() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = open(dir.path());
+    for i in 0..50 {
+        insert_system_memory(&c, 60_000 * (i + 1), &mem()).unwrap();
+    }
+    assert!(wal_size(dir.path()) > 0, "掃除の前は、WAL に書き込みが残っている（この前提が崩れたら、テストの意味が無い）");
+    checkpoint_truncate(&c).unwrap();
+    assert_eq!(wal_size(dir.path()), 0, "掃除のあとも WAL が残っている");
+    assert_eq!(count(&c, "system_memory"), 50, "掃除で行が失われた");
+}
+
+#[test]
+fn 読み取りが開いたままで掃除できなくても_エラーを返すだけで_行は失われない() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = open(dir.path());
+    insert_system_memory(&c, 60_000, &mem()).unwrap();
+    // 別の接続が、読み取りを開いたままにする（閲覧ツールを放置した状態）
+    let reader = Connection::open(dir.path().join("pc-memory.db")).unwrap();
+    reader.execute_batch("BEGIN; SELECT COUNT(*) FROM system_memory;").unwrap();
+    insert_system_memory(&c, 120_000, &mem()).unwrap();
+    let e = checkpoint_truncate(&c);
+    assert!(e.is_err(), "読み取りが開いたままでも、掃除できてしまった");
+    assert_eq!(count(&c, "system_memory"), 2);
+    reader.execute_batch("COMMIT;").unwrap();
+    assert!(checkpoint_truncate(&c).is_ok(), "読み取りを閉じたら、掃除できる");
 }
 
 #[test]

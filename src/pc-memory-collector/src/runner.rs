@@ -4,7 +4,7 @@
 use crate::backup::{backup_file_name, is_daily_backup, run_backup};
 use crate::collect::Source;
 use crate::config::Config;
-use crate::db::{insert_snapshot, insert_system_memory, record_event};
+use crate::db::{checkpoint_truncate, insert_snapshot, insert_system_memory, record_event};
 use crate::timeutil::{latest_slot, next_boundary};
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -132,6 +132,10 @@ impl<S: Source> Collector<S> {
             }
         }
         self.last_backup_attempt = Some(now_ms);
+        // WAL を掃除してからバックアップする。掃除できなくても、バックアップも収集も止めず、イベントに残す
+        if let Err(e) = checkpoint_truncate(&self.conn) {
+            self.fail(report, now_ms, format!("{e}"));
+        }
         match run_backup(&self.conn, &self.cfg.backup_dir, slot, self.cfg.keep) {
             Ok(path) => {
                 let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);

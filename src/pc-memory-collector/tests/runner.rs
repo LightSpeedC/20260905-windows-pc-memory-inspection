@@ -163,6 +163,30 @@ fn 同じ区切りの中では_メモリを重ねて書かない() {
     assert_eq!(count(c.conn(), "SELECT COUNT(*) FROM system_memory"), 1);
 }
 
+// 毎日のバックアップの前に WAL を掃除する。読み取りが開いたままで掃除できなくても、バックアップも収集も止めず、イベントに残す
+#[test]
+fn 掃除できなくても_バックアップは作り_エラーのイベントに残す() {
+    let (d, mut c) = setup();
+    c.tick(t(4, 23, 58, 0));
+    let reader = rusqlite::Connection::open(d.path().join("_data").join("pc-memory.db")).unwrap();
+    reader.execute_batch("BEGIN; SELECT COUNT(*) FROM system_memory;").unwrap();
+    c.tick(t(4, 23, 59, 0));
+    assert!(d.path().join("_backup").join("pc-memory-20261004.zip").exists(), "掃除に失敗してもバックアップは作る");
+    assert_eq!(count(c.conn(), "SELECT COUNT(*) FROM collector_event WHERE event_kind = 'error' AND event_message LIKE '%統合%'"), 1);
+    reader.execute_batch("COMMIT;").unwrap();
+}
+
+#[test]
+fn バックアップの前に_wal_を掃除する() {
+    let (d, mut c) = setup();
+    c.tick(t(4, 23, 58, 0));
+    c.tick(t(4, 23, 59, 0));
+    let wal = d.path().join("_data").join("pc-memory.db-wal");
+    let size = std::fs::metadata(&wal).map(|m| m.len()).unwrap_or(0);
+    // バックアップのあとにイベントを 1 件書くため、完全に 0 とは限らない。掃除されていれば、数ページ（数十 KB）に収まる
+    assert!(size < 32 * 1024, "WAL が掃除されていない（{size} byte）");
+}
+
 fn start_message(c: &Collector<Fake>) -> String {
     c.conn().query_row("SELECT event_message FROM collector_event WHERE event_kind = 'start'", [], |r| r.get(0)).unwrap()
 }
