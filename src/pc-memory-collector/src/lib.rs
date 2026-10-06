@@ -8,5 +8,6 @@ pub mod cpu;
 pub mod db;
 pub mod mask;
 pub mod migrate;
+pub mod request;
 pub mod runner;
 pub mod timeutil;

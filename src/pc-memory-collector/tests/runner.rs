@@ -187,6 +187,27 @@ fn バックアップの前に_wal_を掃除する() {
     assert!(size < 32 * 1024, "WAL が掃除されていない（{size} byte）");
 }
 
+#[test]
+fn 再起動の依頼を受け取ると_イベントに残し_再起動を求める() {
+    let (d, mut c) = setup();
+    c.ensure_request_dirs(t(4, 9, 0, 0));
+    let inbox = d.path().join("_data").join("request").join("inbox");
+    std::fs::write(inbox.join("req-20261006-233700.json"), r#"{"action":"restart"}"#).unwrap();
+    assert!(c.handle_requests(t(4, 9, 0, 0)), "再起動を求めない");
+    assert_eq!(count(c.conn(), "SELECT COUNT(*) FROM collector_event WHERE event_kind = 'request'"), 1);
+}
+
+#[test]
+fn 起動時に_処理中に残った再起動の依頼を完了にし_イベントに残す() {
+    let (d, mut c) = setup();
+    c.ensure_request_dirs(t(4, 9, 0, 0));
+    let root = d.path().join("_data").join("request");
+    std::fs::write(root.join("proc").join("req-20261006-233700.json"), r#"{"action":"restart"}"#).unwrap();
+    c.recover_requests(t(4, 9, 0, 0));
+    assert!(root.join("comp").join("req-20261006-233700.json").exists());
+    assert_eq!(count(c.conn(), "SELECT COUNT(*) FROM collector_event WHERE event_kind = 'request'"), 1);
+}
+
 fn start_message(c: &Collector<Fake>) -> String {
     c.conn().query_row("SELECT event_message FROM collector_event WHERE event_kind = 'start'", [], |r| r.get(0)).unwrap()
 }

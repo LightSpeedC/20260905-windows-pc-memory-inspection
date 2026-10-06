@@ -8,6 +8,8 @@ pub struct Config {
     pub base_dir: PathBuf,
     pub data_dir: PathBuf,
     pub backup_dir: PathBuf,
+    /// 依頼の受信箱の置き場（`<ベース>/_data/request`。中に inbox・proc・comp・error）
+    pub request_dir: PathBuf,
     pub db_path: PathBuf,
     pub memory_interval_ms: i64,
     pub process_interval_ms: i64,
@@ -25,6 +27,7 @@ impl Config {
         Config {
             backup_dir: base_dir.join("_backup"),
             db_path: data_dir.join("pc-memory.db"),
+            request_dir: data_dir.join("request"),
             data_dir,
             base_dir,
             memory_interval_ms: 60_000,

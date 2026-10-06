@@ -5,6 +5,7 @@ use crate::backup::{backup_file_name, is_daily_backup, run_backup};
 use crate::collect::Source;
 use crate::config::Config;
 use crate::db::{checkpoint_truncate, insert_snapshot, insert_system_memory, record_event};
+use crate::request::{recover_proc, scan_inbox, RequestDirs};
 use crate::timeutil::{latest_slot, next_boundary};
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -61,6 +62,38 @@ impl<S: Source> Collector<S> {
     pub fn record_start(&mut self, now_ms: i64) {
         let admin = if self.source.is_admin() { "あり" } else { "なし" };
         let _ = record_event(&self.conn, now_ms, "start", &format!("収集を開始しました（v{}、管理者権限{admin}）", env!("CARGO_PKG_VERSION")));
+    }
+
+    fn request_dirs(&self) -> RequestDirs {
+        RequestDirs::new(&self.cfg.request_dir)
+    }
+
+    /// 依頼の受信箱を作る。作れなくても、収集は止めない（エラーのイベントに残す）
+    pub fn ensure_request_dirs(&mut self, now_ms: i64) {
+        if let Err(e) = self.request_dirs().ensure() {
+            let _ = record_event(&self.conn, now_ms, "error", &format!("依頼の受信箱を作れません: {e}"));
+        }
+    }
+
+    /// 受信箱を走査して、依頼を受け取る。再起動を求められたら true（呼び出し側が、停止を記録して、終了コード 75 で終わる）
+    pub fn handle_requests(&mut self, now_ms: i64) -> bool {
+        let scan = scan_inbox(&self.request_dirs(), now_ms);
+        for name in &scan.accepted {
+            let _ = record_event(&self.conn, now_ms, "request", &format!("再起動の依頼を受け付けました（{name}）"));
+        }
+        for (name, reason) in &scan.rejected {
+            let _ = record_event(&self.conn, now_ms, "request", &format!("依頼を受け付けませんでした（{name}）: {reason}"));
+        }
+        scan.restart
+    }
+
+    /// 起動時に、処理中に残った依頼（前のプロセスが受け取った再起動の依頼）を完了にして、新しい版を書く
+    pub fn recover_requests(&mut self, now_ms: i64) -> Vec<String> {
+        let messages = recover_proc(&self.request_dirs(), now_ms, env!("CARGO_PKG_VERSION"));
+        for m in &messages {
+            let _ = record_event(&self.conn, now_ms, "request", m);
+        }
+        messages
     }
 
     pub fn record_stop(&mut self, now_ms: i64) {
