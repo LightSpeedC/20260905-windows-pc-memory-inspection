@@ -111,7 +111,7 @@
 <div class="titlebar"><div class="inner">
 <h1>プロセスメモリ調査ツール — 課題</h1>
 <div class="lead">これから解決することを集約する。状態は 未 / 着手 / 済 の 3 段階</div>
-<div class="date">📅 作成: 2026-09-08 / 更新: 2026-10-06</div>
+<div class="date">📅 作成: 2026-09-08 / 更新: 2026-10-07</div>
 </div></div>
 
 <div class="wrap">
@@ -401,7 +401,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 </section>
 
 <section class="ch03" id="ch03">
-<h1>時系列の収集 <span class="badge b-warn">着手</span> <span class="groupmeta">1 件（着手 1）</span></h1>
+<h1>時系列の収集 <span class="badge b-warn">着手</span> <span class="groupmeta">3 件（着手 1・未 2）</span></h1>
 
 <p>6 時間ごとの「ある時点の写真」では追えない、メモリの増え方を時系列で残す話を集める。</p>
 
@@ -423,6 +423,60 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <tr><td class="num">6</td><td><strong>DB の命名と日時の形式を <code>ai-chat-lite</code> に合わせる</strong>（日時を JST の 23 文字 TEXT に、<code>id</code> を <code>&lt;テーブル&gt;_id</code> に、略語を直す）。<strong>あわせて、昇格した権限で書いたかを <code>process_snapshot.is_admin</code> に残す。</strong><strong>導入の前に行う</strong>（計画書の「命名と日時の決まり」・手順 14）</td><td class="nowrap"><span class="badge b-warn">着手</span>（実装とテストは済。非管理者の実機で確認。<strong><code>is_admin = 1</code> は導入のときに確かめる</strong>。読めなかったプロセスの <code>started_at</code> が <code>1970/01/01</code> になるのは、そのままにする）</td></tr>
 <tr><td class="num">7</td><td><strong>exe の置き替えと、再起動の依頼の受信箱</strong>。置き替え（動いている exe を退避して新しい exe を置く）は実装済み。再起動を、管理者なしで、依頼のファイルで行う仕組み（<code>_data/request/</code> を OS のファイル監視で見る）を作る（計画書の「依頼の受信箱」・手順 15〜17）</td><td class="nowrap"><span class="badge b-ok">済</span>（実装・テスト・実機の確認まで。10-07 に、一般ユーザーで再起動を依頼し、約 11 秒で完了。不正な依頼は、理由つきで <code>error/</code> へ。待機メモリは増えていない）</td></tr>
 <tr><td class="num">8</td><td>実環境で確かめる（<strong>管理者でサービスを導入</strong>し、稼働・再起動・自動起動・検知。23:59 のバックアップと世代の整理）</td><td class="nowrap"><span class="badge b-warn">着手</span>（10-06 に導入。✅ 稼働（1 分ごとの行・00:00 のスナップショット）・✅ 再起動・✅ 初回の 23:59 のバックアップ・✅ <strong>サービス（LocalSystem）では、コマンドラインが 565 件中 544 件読める</strong>（非管理者は 295 件）。<strong>残り: 強制終了後の再起動・OS 再起動後の自動起動・検知タスクの登録と、止めたときの通知・翌日以降のバックアップと 100 世代の整理</strong>）</td></tr>
+</tbody>
+</table></div>
+</details>
+
+<details open>
+<summary><span class="no">i261007-01</span>システム全体のコミットのうち、約 23 GB が、どのプロセスにも紐づかない <span class="badge b-none">未</span></summary>
+
+<h2>状況</h2>
+<p>収集の記録（10-06 23:23）で、<strong>1 分のあいだに、物理メモリの空きが 15.4 GB から 0.7 GB に減り、スワップが 16 GB 使われ、コミットが 33.5 GB から 50.1 GB に増えた。</strong>原因は、まだ特定できていない。</p>
+
+<div class="tablewrap"><table>
+<thead><tr><th>時刻</th><th>物理の空き</th><th>スワップの使用量</th><th>コミットの使用量</th></tr></thead>
+<tbody>
+<tr><td class="nowrap">10-06 23:22</td><td class="num">15.4 GB</td><td class="num">0</td><td class="num">33.5 GB</td></tr>
+<tr><td class="nowrap">10-06 23:23</td><td class="num">0.7 GB</td><td class="num">15.9 GB</td><td class="num">50.1 GB</td></tr>
+<tr><td class="nowrap">10-07 00:06</td><td class="num">16.9 GB</td><td class="num">15.4 GB</td><td class="num">47.9 GB</td></tr>
+</tbody>
+</table></div>
+
+<h2>分かっていること</h2>
+<ul>
+<li>10-07 00:00 のスナップショット（サービス権限で、565 プロセス中 544 件のコマンドラインが読めた）で、<strong>最大のプロセスは <code>claude.exe</code> の約 0.8 GB</strong>。全プロセスの合計は、物理メモリ（WS）が約 15.5 GB、コミット（仮想）が約 24.6 GB。</li>
+<li>システム全体のコミットは約 48 GB で、<strong>プロセスの合計との差の約 23 GB は、プロセスに紐づかない</strong>（カーネル・ドライバ・共有メモリ・仮想マシン等の可能性がある。未確認）。</li>
+<li>空きの物理メモリは戻ったが、スワップとコミットは、00:06 になっても残っている。</li>
+<li>収集本体は原因ではない（WS 8 MB・プライベート 1.8 MB）。</li>
+</ul>
+
+<h2>やること</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>プロセス外の消費の内訳を調べる（非ページプール・ページプール・共有メモリ・仮想マシン・GPU 等）。手段（RAMMap・poolmon・タスクマネージャーのコミット表示等）は、選ぶ必要がある</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">2</td><td>収集に、プロセス外の指標（非ページプール等）を足すか決める。足すなら、<code>system_memory</code> の列と、計画書の定義を直す（DB の版 1 は、導入前なら書き換えられるが、導入後は、新しい版として足す）</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">3</td><td>同じ増え方が、繰り返し起きるかを、収集のデータで見る（<code>swap_used</code> と <code>commit_used</code> の推移）</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+</tbody>
+</table></div>
+</details>
+
+<details open>
+<summary><span class="no">i261007-02</span>収集サービスの小さな後始末と、判断待ちの項目 <span class="badge b-none">未</span></summary>
+
+<h2>状況</h2>
+<p>10-07 までの実装と確認（<a href="#ch03">i261004-02</a>）で見つかった、小さな後始末と、まだ答えが出ていない判断を集める。実環境の確認の残り（強制終了後の再起動・OS 再起動後の自動起動・検知タスクの登録・翌日以降のバックアップ）は、i261004-02 の行 8 にある。</p>
+
+<h2>やること</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>やること</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td><code>Resolve-SubstPath</code> の判定（ドライブの判定に <code>TrimEnd('\')</code> だけを使い、<code>/</code> 区切りを外す）が、<code>register-check-task.ps1</code>・<code>register-inspect-task.ps1</code>・<code>inspect-process-memory.ps1</code> に残っている。今は、呼び出しが <code>\</code> に揃えてから渡すので、問題は出ていない。<strong>1 か所にまとめるか、各 1 行を直すかを選ぶ</strong></td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">2</td><td>Linux・Mac の <code>is_admin</code>（root かどうか）は、実機で確かめられないため、常に 0 にしてある。Linux・Mac に広げるときに実装する</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">3</td><td>DB を読んで確かめる一時スクリプト（<code>tmp/inspect-live.ts</code>）を、<code>tools/80_ops/</code> に移すか。何度も使っている</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">4</td><td>GitHub Pages の公開と、<code>lightspeedc.com</code> への掲載の依頼をするか（リポジトリは public にした。公開資料は <code>notes/</code> で、読み手を想定していない資料が多い）</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">5</td><td>共有ログ（<code>logs/task-run.log</code>）に残った、古い SJIS の行（文字化けする）を、改名して退避するか、そのまま残すか</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">6</td><td>スリープ・復帰を、収集の記録（<code>collector_event</code>）に入れるか。スリープをまたいだ行の欠けの理由を、あとから説明できるようにするため</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
 </tbody>
 </table></div>
 </details>
