@@ -87,7 +87,9 @@ try {
 	$winsw = Join-Path $binDir 'rust-ai-pc-memory-collector-winsw.exe'
 
 	function Invoke-Winsw([string]$Command) {
-		& $winsw $Command
+		# winsw の出力は画面へ出し、戻り値には含めない（PowerShell の関数は、コマンドの出力もすべて戻り値にする。
+		# 含めると、成功しても (Invoke-Winsw …) -ne 0 が真になり、導入に失敗した、と出る）
+		& $winsw $Command | Out-Host
 		return $LASTEXITCODE
 	}
 
@@ -122,6 +124,7 @@ try {
 	if (-not (Test-Path -LiteralPath $winsw)) {
 		if (-not (Test-Path -LiteralPath $WinswSource)) {
 			Write-Host ('winsw の複製元が見つかりません: ' + $WinswSource) -ForegroundColor Red
+			Write-Host '管理者のコンソールを直接開いて実行すると、T: や W: が見えません。一般ユーザーのコマンドプロンプトから実行してください（自動で管理者へ昇格し、パスも実体へ直して渡します）。'
 			Complete-Script 1
 		}
 		Copy-Item -LiteralPath $WinswSource -Destination $winsw

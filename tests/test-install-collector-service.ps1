@@ -56,6 +56,43 @@ if (-not $letter) {
 	}
 }
 
+# Invoke-Winsw は終了コードだけを返す。winsw が出力する行まで返すと、
+# 「成功したのに if ((Invoke-Winsw 'install') -ne 0) が真になり、導入に失敗しました、と出る」（実際に起きた。
+# PowerShell の関数は、コマンドの出力もすべて戻り値に含める）
+Write-Host 'Invoke-Winsw の戻り値'
+$fnWinsw = $ast.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Invoke-Winsw' }, $true)
+if (-not $fnWinsw) {
+	Write-Host '  NG   切り出す関数 Invoke-Winsw が見つからない'
+	$ng++
+} else {
+	Invoke-Expression $fnWinsw.Extent.Text
+	$stubDir = Join-Path (Split-Path -Parent $PSScriptRoot) ('tmp/test-winsw-' + [guid]::NewGuid().ToString('N'))
+	New-Item -ItemType Directory -Force -Path $stubDir | Out-Null
+	try {
+		# 出力を出して成功する版と、出力を出して失敗する版
+		[System.IO.File]::WriteAllText((Join-Path $stubDir 'ok.cmd'), "@echo off`r`necho Installing the service`r`necho done`r`nexit /b 0`r`n")
+		[System.IO.File]::WriteAllText((Join-Path $stubDir 'ng.cmd'), "@echo off`r`necho failed`r`nexit /b 3`r`n")
+		$winsw = Join-Path $stubDir 'ok.cmd'
+		$r = @(Invoke-Winsw 'install')
+		if ($r.Count -eq 1 -and $r[0] -eq 0) {
+			Write-Host '  OK   出力を出して成功しても、戻り値は終了コード 0 だけ'
+		} else {
+			Write-Host ('  NG   成功したのに、戻り値が ' + $r.Count + ' 個ある（出力が混ざっている）')
+			$ng++
+		}
+		$winsw = Join-Path $stubDir 'ng.cmd'
+		$r = @(Invoke-Winsw 'install')
+		if ($r.Count -eq 1 -and $r[0] -eq 3) {
+			Write-Host '  OK   失敗したときは、終了コードをそのまま返す'
+		} else {
+			Write-Host '  NG   失敗したときの戻り値が、終了コードだけではない'
+			$ng++
+		}
+	} finally {
+		Remove-Item -LiteralPath $stubDir -Recurse -Force
+	}
+}
+
 # 昇格の引数に、実体へ直した複製元を、必ず渡す（既定値のときも）
 Write-Host '昇格の引数'
 $text = [System.IO.File]::ReadAllText($target)
