@@ -47,6 +47,8 @@ function Test-Admin {
 
 # subst で割り当てたドライブは昇格先・サービスから見えないため、実体パスへ直す
 function Resolve-SubstPath([string]$Path) {
+	# 区切りが / のパス（T:/ai-chat-lite/… 等）も扱う。\ だけを外すと、ドライブの判定が外れて素通りする
+	$Path = $Path.Replace('/', '\')
 	$rootPath = [System.IO.Path]::GetPathRoot($Path)
 	if (-not $rootPath) { return $Path }
 	$drive = $rootPath.TrimEnd('\')
@@ -67,7 +69,9 @@ if ((-not (Test-Admin)) -and (-not $NoElevate)) {
 	$q = [char]34
 	$argLine = '-NoProfile -ExecutionPolicy Bypass -File ' + $q + $selfReal + $q + ' -NoElevate -Pause'
 	if ($Uninstall) { $argLine += ' -Uninstall' }
-	if ($WinswSource -ne 'T:/ai-chat-lite/node-ai-chat-lite-winsw.exe') { $argLine += ' -WinswSource ' + $q + $WinswSource + $q }
+	# 管理者側では T: 等の subst が見えない。複製元は、既定値のときも、実体へ直してから渡す
+	$winswReal = Resolve-SubstPath $WinswSource
+	$argLine += ' -WinswSource ' + $q + $winswReal + $q
 	Write-Host '管理者権限で起動し直します...'
 	try {
 		Start-Process -FilePath 'powershell' -Verb RunAs -ArgumentList $argLine -ErrorAction Stop
@@ -140,6 +144,9 @@ try {
 	$svc = Get-Service -Name $ServiceId -ErrorAction SilentlyContinue
 	Write-Host ''
 	Write-Host ('サービス: ' + $ServiceId + ' / 状態: ' + $svc.Status + ' / 開始の種類: ' + $svc.StartType)
+	# 登録された実行ファイルのパスが、実体のパスであること（subst のドライブだと、OS の再起動後に起動できない）を目で確かめる
+	$imagePath = (Get-CimInstance -ClassName Win32_Service -Filter ("Name='" + $ServiceId + "'")).PathName
+	Write-Host ('登録された実行ファイル: ' + $imagePath)
 	Write-Host 'DB: _data/pc-memory.db / バックアップ: _backup/ / ログ: _bin/logs/'
 	Complete-Script 0
 } catch {
