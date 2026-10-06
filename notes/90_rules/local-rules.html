@@ -33,7 +33,7 @@ footer{padding:18px 30px 30px;max-width:1600px;margin:0 auto;color:var(--ink-sof
 <body>
 <div class="titlebar"><div class="inner">
 <h1>ローカルルール</h1>
-<div class="lead">📅 作成: 2026-09-21 / 更新: 2026-10-06</div>
+<div class="lead">📅 作成: 2026-09-21 / 更新: 2026-10-07</div>
 </div></div>
 <div class="wrap">
 
@@ -97,6 +97,9 @@ WS合計・コミット合計も同じ px/MB の目盛りに揃えて赤バー�
 （<code>logs/reports-admin.txt</code> の最終行）が生成されているか、ch06「結論と所見」まで
 正しく追記されているかを確認する。cron 式は <code>15 0,6,12,18 * * *</code>。</p>
 
+<h2>セッションの開始時</h2>
+<p>cron とは別に、<strong>セッションを開いたら、<code>logs/check-report.log</code>（レポート）と <code>logs/check-collector.log</code>（収集）の最後の行を見る</strong>。❌ 異常が出ていれば、報告する。cron は、セッションを閉じている間は動かないため、その間に起きた異常を、ここで拾う。</p>
+
 <div class="callout">
 <strong>cron はセッションの中だけで生きる（共通ルール参照）。</strong>
 このセッションを閉じると消え、7日で自動失効する。継続するかは利用者が都度決める。
@@ -108,16 +111,47 @@ WS合計・コミット合計も同じ px/MB の目盛りに揃えて赤バー�
 <p>共通ルールには、動いているサービスの exe を置き替える決まりが無いため、このプロジェクトだけの決めごととして書く。</p>
 
 <ol>
-<li><code>tools/20_build/build-collector.cmd</code> でビルドして置く。動いている exe は、削除も上書きもできないが、<strong>名前を変えて <code>tmp/</code> へ退避することはできる</strong>（<code>Set-ExeFile</code>）。サービスは止めない。</li>
-<li>サービスを再起動して、新しい exe に切り替える（管理者。<code>deploy\rust-ai-pc-memory-collector-winsw.exe restart</code>）。毎分の区切りの直後に行うと、行が欠けない。</li>
-<li>開始のイベントが増え、1 分後に行が増えることを確かめる。</li>
+<li><strong><code>tools\20_build\build-collector.cmd -Restart</code></strong> で、ビルド → 置き替え → 再起動の依頼までを行う。管理者は要らない。
+<ul>
+<li>動いている exe は、削除も上書きもできないが、<strong>名前を変えて <code>tmp/</code> へ退避することはできる</strong>（<code>Set-ExeFile</code>）。サービスは止めない。</li>
+<li>再起動は、<strong>受信箱（<code>_data/request/inbox</code>）に依頼のファイルを置いて</strong>行う。サービスが受け取り、終了コード 75 で終わり、winsw が新しい exe で起動し直す。</li>
+</ul></li>
+<li>結果は、<code>_data/request/comp/</code>（完了。新しい版が書かれる）か <code>error/</code>（失敗。理由が書かれる）に出る。再起動の間（約 10 秒）は、収集が止まる。毎分の区切りの直後に行うと、行が欠けない。</li>
+<li>ビルドせずに再起動だけ頼むときは、<code>tools\80_ops\request-restart.cmd</code>。</li>
+<li><strong>受信箱を持たない古い版</strong>が動いているときだけ、管理者で <code>deploy\rust-ai-pc-memory-collector-winsw.exe restart</code> する。</li>
 </ol>
 
-<p><code>install-collector-service.cmd</code> は、定義や winsw を変えたときの登録の作り直し用。exe だけを替えるときは使わない。</p>
+<p><code>install-collector-service.cmd</code> は、定義や winsw を変えたときの<strong>登録の作り直し用</strong>。exe だけを替えるときは使わない。</p>
 
 <div class="callout">
-<strong>理由:</strong> 導入スクリプトで入れ直すと、毎回、停止・削除・再登録が走り、導入のたびに管理者の操作が増える。
+<strong>理由:</strong> 導入スクリプトで入れ直すと、毎回、停止・削除・再登録が走り、管理者の操作が増える。受信箱の依頼なら、管理者なしで、結果（完了・失敗・時間切れ）まで確かめられる。
 </div>
+</section>
+
+<section>
+<h1>DB とバックアップに、資格情報が入りうる</h1>
+<p>共通ルール「機密情報のマスキング」（クレデンシャルを、ファイルにも書かない）からの<strong>例外</strong>。</p>
+
+<ul>
+<li><strong>何が例外か</strong>: プロセスのコマンドラインを、<strong>そのまま</strong> DB に記録する。引数にトークン・パスワード・API キーが入るプロセス（<code>--token</code>・<code>--password</code>・<code>Authorization:</code> 等）が、実際にある。ユーザープロファイルのパスだけは、<code>~</code> に置換する。</li>
+<li><strong>対象のファイル</strong>: <code>_data/pc-memory.db</code>（と <code>-wal</code>・<code>-shm</code>）・<code>_backup/*.zip</code>・版を上げる前の控え。いずれも、先頭 <code>_</code> のフォルダにあり、Git の管理外。</li>
+<li><strong>守ること</strong>: 外へ持ち出さない・共有しない・Git に入れない。<strong>チャットや資料へ、コマンドラインの値を貼らない</strong>（集計や件数は載せてよい）。</li>
+</ul>
+
+<div class="callout">
+<strong>理由:</strong> 目的が、読めないプロセスの素性を、コマンドラインで確かめることだから。伏せ字にすると、確かめられなくなる（10-04 に決定）。
+</div>
+</section>
+
+<section>
+<h1>サービスの置き場</h1>
+<p>共通ルールの「デプロイ定義」の置き場（<code>deploy/</code>）を使う。このプロジェクトだけの決めごとを、次に書く。</p>
+
+<ul>
+<li><strong>定義の XML は <code>deploy/</code>（Git 管理）。exe（ビルドした本体・winsw の複製）とログは、同じ <code>deploy/</code> に置くが、Git に入れない</strong>（<code>.gitignore</code>）。ビルド出力は、Rust の既定の <code>target/</code>。</li>
+<li><strong>導入は、一般ユーザーのコマンドプロンプトから行う</strong>（<code>tools\70_deploy\install-collector-service.cmd</code>）。自動で管理者へ昇格し、パスも実体へ直して渡す。<strong>管理者のコンソールを直接開いて実行すると、<code>T:</code> や <code>W:</code> が見えず、winsw の複製元を見失う。</strong></li>
+<li><strong>サービスに登録するパスは、実体のパス（subst のドライブではない）</strong>。subst はログオンセッションごとに閉じていて、OS の再起動後に、サービスが起動できなくなる。導入の最後に表示される「登録された実行ファイル」が、<code>C:\</code> で始まっていることを見る。</li>
+</ul>
 </section>
 
 </div>
