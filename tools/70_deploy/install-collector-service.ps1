@@ -3,9 +3,9 @@
 	rust-ai-pc-memory-collector を Windows サービス（winsw）として導入する。管理者権限が要る。
 
 .DESCRIPTION
-	_bin/ に、実行ファイル・winsw・winsw の定義（XML）をそろえ、サービスを導入して起動する。
+	deploy/ に、実行ファイル・winsw・winsw の定義（XML。Git に入れてある）をそろえ、サービスを導入して起動する。
 	すでに導入済みなら、止めて入れ直す（定義や実行ファイルの更新を反映するため）。
-	事前に tools/20_build/build-collector.ps1 で _bin/rust-ai-pc-memory-collector.exe を作っておく。
+	事前に tools/20_build/build-collector.ps1 で deploy/rust-ai-pc-memory-collector.exe を作っておく。
 
 	【winsw の実行ファイル】
 	Git に入れない。ai-chat-lite の winsw を複製して使う（既定: T:/ai-chat-lite/node-ai-chat-lite-winsw.exe）。
@@ -83,7 +83,7 @@ if ((-not (Test-Admin)) -and (-not $NoElevate)) {
 
 try {
 	$root = Resolve-SubstPath (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
-	$binDir = Join-Path $root '_bin'
+	$binDir = Join-Path $root 'deploy'
 	$winsw = Join-Path $binDir 'rust-ai-pc-memory-collector-winsw.exe'
 
 	function Invoke-Winsw([string]$Command) {
@@ -112,7 +112,7 @@ try {
 		Complete-Script 0
 	}
 
-	# 必要なものを _bin/ にそろえる
+	# 必要なものを deploy/ にそろえる
 	$exe = Join-Path $binDir 'rust-ai-pc-memory-collector.exe'
 	if (-not (Test-Path -LiteralPath $exe)) {
 		Write-Host ('実行ファイルがありません: ' + $exe) -ForegroundColor Red
@@ -127,7 +127,12 @@ try {
 		Copy-Item -LiteralPath $WinswSource -Destination $winsw
 		Write-Host 'winsw を複製しました。'
 	}
-	Copy-Item -LiteralPath (Join-Path $root 'tools/80_ops/winsw/rust-ai-pc-memory-collector-winsw.xml') -Destination (Join-Path $binDir 'rust-ai-pc-memory-collector-winsw.xml') -Force
+	# 定義の XML は、winsw と同じ deploy/ にある（Git に入れてある）。写さない
+	$xmlPath = Join-Path $binDir 'rust-ai-pc-memory-collector-winsw.xml'
+	if (-not (Test-Path -LiteralPath $xmlPath)) {
+		Write-Host ('winsw の定義（XML）がありません: ' + $xmlPath) -ForegroundColor Red
+		Complete-Script 1
+	}
 
 	Write-Host 'サービスを導入します...'
 	if ((Invoke-Winsw 'install') -ne 0) {
@@ -147,7 +152,7 @@ try {
 	# 登録された実行ファイルのパスが、実体のパスであること（subst のドライブだと、OS の再起動後に起動できない）を目で確かめる
 	$imagePath = (Get-CimInstance -ClassName Win32_Service -Filter ("Name='" + $ServiceId + "'")).PathName
 	Write-Host ('登録された実行ファイル: ' + $imagePath)
-	Write-Host 'DB: _data/pc-memory.db / バックアップ: _backup/ / ログ: _bin/logs/'
+	Write-Host 'DB: _data/pc-memory.db / バックアップ: _backup/ / ログ: deploy/logs/'
 	Complete-Script 0
 } catch {
 	Write-Host ('失敗しました: ' + $_.Exception.Message) -ForegroundColor Red

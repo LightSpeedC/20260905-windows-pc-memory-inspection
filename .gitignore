@@ -4,6 +4,7 @@ tmp/
 etc/
 logs/
 _*
+deploy/*.exe
 
 .claude/*
 !.claude/settings.json

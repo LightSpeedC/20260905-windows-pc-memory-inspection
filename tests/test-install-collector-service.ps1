@@ -72,6 +72,40 @@ if ($text -match 'Resolve-SubstPath\s+\$WinswSource') {
 	$ng++
 }
 
+# サービスの置き場は deploy/（共通ルールの「デプロイ定義」）。ai-chat-lite の課題 i260830-01 と同じ向き。
+# 定義の XML は deploy/ に置いて Git に入れる。exe（ビルドした本体・winsw の複製）は deploy/ に置くが、Git に入れない
+Write-Host 'サービスの置き場（deploy/）'
+$root = Split-Path -Parent $PSScriptRoot
+$xmlPath = Join-Path $root 'deploy/rust-ai-pc-memory-collector-winsw.xml'
+if (Test-Path -LiteralPath $xmlPath) {
+	$xml = [System.IO.File]::ReadAllText($xmlPath)
+	if ($xml -match '<id>rust-ai-pc-memory-collector</id>' -and $xml -match '<executable>rust-ai-pc-memory-collector\.exe</executable>') {
+		Write-Host '  OK   定義の XML が deploy/ にあり、サービス ID と実行ファイル名が合っている'
+	} else {
+		Write-Host '  NG   deploy/ の XML のサービス ID か実行ファイル名が違う'
+		$ng++
+	}
+} else {
+	Write-Host '  NG   定義の XML が deploy/ に無い'
+	$ng++
+}
+foreach ($name in 'tools/70_deploy/install-collector-service.ps1', 'tools/20_build/build-collector.ps1') {
+	$src = [System.IO.File]::ReadAllText((Join-Path $root $name))
+	if ($src -match '_bin|80_ops/winsw') {
+		Write-Host ('  NG   ' + $name + ' が、旧い置き場（_bin・tools/80_ops/winsw）を指している')
+		$ng++
+	} else {
+		Write-Host ('  OK   ' + $name + ' は、旧い置き場を指していない')
+	}
+}
+$ignore = [System.IO.File]::ReadAllText((Join-Path $root '.gitignore'))
+if ($ignore -match '(?m)^deploy/\*\.exe\s*$') {
+	Write-Host '  OK   .gitignore が deploy/ の exe を除外している'
+} else {
+	Write-Host '  NG   .gitignore が deploy/ の exe を除外していない（winsw の複製とビルドした本体が Git に入ってしまう）'
+	$ng++
+}
+
 if ($ng -eq 0) {
 	Write-Host '結果: すべて通った'
 } else {

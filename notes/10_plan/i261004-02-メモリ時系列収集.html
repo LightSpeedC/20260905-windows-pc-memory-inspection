@@ -186,7 +186,7 @@
 <tr><td class="nowrap">ソース</td><td class="nowrap"><code>src/pc-memory-collector/</code></td><td>Rust のプロジェクト。<code>Cargo.lock</code> も Git に入れる。<code>target/</code> は管理外にする</td></tr>
 <tr><td class="nowrap">DB</td><td class="nowrap"><code>_data/pc-memory.db</code></td><td>先頭 <code>_</code> は Git 管理外（<code>ai-chat-lite</code> と同じ置き方）</td></tr>
 <tr><td class="nowrap">バックアップ</td><td class="nowrap"><code>_backup/pc-memory-yyyymmdd.zip</code></td><td>同上</td></tr>
-<tr><td class="nowrap">サービス定義</td><td class="nowrap"><code>tools/80_ops/winsw/</code></td><td>XML は Git に入れる。winsw の実行ファイルは Git に入れない（導入手順に書く）</td></tr>
+<tr><td class="nowrap">サービスの置き場</td><td class="nowrap"><code>deploy/</code></td><td><strong>共通ルールの「デプロイ定義」の置き場</strong>（ai-chat-lite が向かう先と同じ。課題 i260830-01）。定義の XML は Git に入れる。<strong>exe（ビルドした本体・winsw の複製）とログは、同じ <code>deploy/</code> に置くが Git に入れない</strong>（<code>.gitignore</code>）。ビルド出力は Rust の既定の <code>target/</code>、本体は <code>build-collector</code> が <code>deploy/</code> へ写す。導入は実体のパス（subst ではない）で行う（10-06 に <code>_bin/</code> と <code>tools/80_ops/winsw/</code> から移した）</td></tr>
 </tbody>
 </table></div>
 </section>
@@ -482,7 +482,7 @@
 <tr><td class="num">5</td><td>版の当て方（<code>src/scripts/20_migrate/ver_000001/</code> の初期 SQL を含む）、DB・収集（メモリ・プロセス）・CPU 使用率を実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（実機で、580 プロセス・コマンドライン重複排除・CPU 使用率が 2 回目から入ることを確認。<strong>伏せ字の漏れ（Git bash 形式の <code>/c/Users/…</code>）を実データで見つけ、テストを足して直した</strong>）</td></tr>
 <tr><td class="num">6</td><td>周期の実行・イベントの記録・引数（間隔の変更）を実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（実機で、5 秒・20 秒の間隔で動作。Ctrl+C で停止イベントを書いて終了コード 0。<strong>強制終了後も DB は <code>ok</code></strong>）</td></tr>
 <tr><td class="num">7</td><td>バックアップ（<code>VACUUM INTO</code> → 検査 → zip → 世代の整理）を実装する</td><td class="nowrap"><span class="badge b-ok">済</span>（実機で、指定した時刻ちょうどに zip が 1 つだけ作られた）</td></tr>
-<tr><td class="num">8</td><td>winsw の定義と、導入手順（管理者で install）を作る</td><td class="nowrap"><span class="badge b-ok">済</span>（作成のみ。<code>tools/80_ops/winsw/</code>・<code>tools/70_deploy/install-collector-service.cmd</code>・<code>tools/20_build/build-collector.cmd</code>。導入は手順 11）</td></tr>
+<tr><td class="num">8</td><td>winsw の定義と、導入手順（管理者で install）を作る</td><td class="nowrap"><span class="badge b-ok">済</span>（作成のみ。<code>deploy/</code>（定義の XML）・<code>tools/70_deploy/install-collector-service.cmd</code>・<code>tools/20_build/build-collector.cmd</code>。導入は手順 11）</td></tr>
 <tr><td class="num">9</td><td>検知を、先にテストを書いて作る。<strong>収集は別のタスク（10 分ごと）で検知する</strong>（<code>check-collector.ts</code>。<code>register-check-task.ps1 -Target collector</code>）</td><td class="nowrap"><span class="badge b-ok">済</span>（実物の DB で、正常 → 再確認待ち → 異常＋トーストの流れを確認。登録は手順 11）</td></tr>
 <tr><td class="num">10</td><td>テストの一括実行（<code>tools/40_test/run-tests.ps1</code>）に <code>cargo test</code> を加える</td><td class="nowrap"><span class="badge b-ok">済</span>（ps1・node・bun・cargo の全件が通る）</td></tr>
 <tr><td class="num">11</td><td><strong>実環境で確かめる（稼働）</strong>。サービスを install し、1 分ごとに行が増える・毎時にスナップショットが入る・プロセスを止めると 10 秒後に再起動する・再起動（OS）後に自動で起動する・止めると検知が異常を出す</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>

@@ -5,7 +5,8 @@
 
   <!--
     ai-chat-lite の winsw の定義に倣う。
-    このファイルは winsw の実行ファイルと同じ名前（拡張子だけ .xml）で、同じフォルダ（_bin/）に置く。
+    このファイルは winsw の実行ファイルと同じ名前（拡張子だけ .xml）で、同じフォルダ（deploy/）に置く。
+    この XML は Git に入れる。同じフォルダに置く exe（ビルドした本体・winsw の複製）は Git に入れない（.gitignore）。
     パスは書かない。WinSW は相対パスを自分の実行ファイルがある場所（%BASE%）から解決する。
 
     install は実体のフォルダ（C:\...）で行う。W: は subst の仮想ドライブで、
@@ -13,7 +14,7 @@
   -->
   <executable>rust-ai-pc-memory-collector.exe</executable>
 
-  <!-- ベースはプロジェクトのルート（_bin の 1 つ上）。DB は _data/、バックアップは _backup/ -->
+  <!-- ベースはプロジェクトのルート（deploy の 1 つ上）。DB は _data/、バックアップは _backup/ -->
   <arguments>--base-dir "%BASE%\.."</arguments>
 
   <!--
