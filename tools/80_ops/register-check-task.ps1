@@ -17,14 +17,14 @@
 	登録するパスは実体パスへ直す。
 
 	【収集の検知（-Target collector）】
-	check-collector.cmd を 10 分ごとに実行するタスクを作る（メモリの時系列収集が止まっていないかを見る）。
+	check-pc-memory-collector.cmd を 10 分ごとに実行するタスクを作る（メモリの時系列収集が止まっていないかを見る）。
 	最初の異常は「再確認待ち」としてログだけに残し、続けて異常のとき（次の 10 分後）だけ、トースト通知を出す。
 
 .PARAMETER Target
 	検知の対象。report（既定。レポート生成）か collector（メモリの時系列収集）。
 
 .PARAMETER TaskName
-	タスク名。既定は ai-pc-check-report（-Target collector なら ai-pc-check-collector）。
+	タスク名。既定は ai-pc-check-report（-Target collector なら ai-pc-check-pc-memory-collector）。
 
 .PARAMETER TaskPath
 	タスクの置き場（フォルダ）。既定は生成タスクと同じ \My-Local-Private-PC\。
@@ -53,9 +53,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($Target -eq 'collector' -and -not $PSBoundParameters.ContainsKey('TaskName')) {
-	$TaskName = 'ai-pc-check-collector'
+	$TaskName = 'ai-pc-check-pc-memory-collector'
 }
-$cmdName = if ($Target -eq 'collector') { 'check-collector.cmd' } else { 'check-report.cmd' }
+$cmdName = if ($Target -eq 'collector') { 'check-pc-memory-collector.cmd' } else { 'check-report.cmd' }
 
 # 表示にユーザー名やパスの実体を出さない
 function Hide-Name([string]$Text) {

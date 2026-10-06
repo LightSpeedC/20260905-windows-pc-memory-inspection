@@ -4,7 +4,7 @@
 
 .DESCRIPTION
 	src/pc-memory-collector を Rust（MSVC ツールチェーン）でビルドし、実行ファイルを deploy/rust-ai-pc-memory-collector.exe にコピーする。
-	deploy/ の exe は Git 管理外（.gitignore）。サービスの導入（tools/70_deploy/install-collector-service.ps1）がここを使う。
+	deploy/ の exe は Git 管理外（.gitignore）。サービスの導入（tools/70_deploy/install-pc-memory-collector-service.ps1）がここを使う。
 
 .PARAMETER Restart
 	置き替えのあとに、動いているサービスへ、再起動を依頼する（管理者は要らない）。
@@ -70,7 +70,7 @@ try {
 	if ($Restart) {
 		# サービスの再起動を、受信箱の依頼で行う。結果（完了・失敗・時間切れ）が出るまで待つ
 		Write-Host 'サービスに、再起動を依頼します...'
-		node (Join-Path $root 'tools/80_ops/request-restart.ts') 'note:build-collector -Restart'
+		node (Join-Path $root 'tools/80_ops/request-restart.ts') 'note:build-pc-memory-collector -Restart'
 		Complete-Script $LASTEXITCODE
 	}
 	Write-Host '動いているサービスは、旧い exe のままです。新しい exe に切り替えるには、-Restart を付けて実行し直すか、サービスを再起動します。'

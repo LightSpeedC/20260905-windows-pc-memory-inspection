@@ -1,4 +1,4 @@
-﻿# install-collector-service.ps1 の回帰テスト。
+﻿# install-pc-memory-collector-service.ps1 の回帰テスト。
 # 管理者へ昇格すると、ユーザーの subst（W: ・ T: 等）は見えなくなる。そのため、昇格する前に、
 # 渡すパスをすべて実体のパスへ直しておく必要がある。
 # 実際に起きた不具合: winsw の複製元の既定値（T:/ai-chat-lite/…）を直していなかった。
@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$target = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/70_deploy/install-collector-service.ps1'
+$target = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/70_deploy/install-pc-memory-collector-service.ps1'
 if (-not (Test-Path -LiteralPath $target)) {
 	Write-Host ('対象が見つからない: ' + $target)
 	exit 1
@@ -126,7 +126,7 @@ if (Test-Path -LiteralPath $xmlPath) {
 	Write-Host '  NG   定義の XML が deploy/ に無い'
 	$ng++
 }
-foreach ($name in 'tools/70_deploy/install-collector-service.ps1', 'tools/20_build/build-collector.ps1') {
+foreach ($name in 'tools/70_deploy/install-pc-memory-collector-service.ps1', 'tools/20_build/build-pc-memory-collector.ps1') {
 	$src = [System.IO.File]::ReadAllText((Join-Path $root $name))
 	if ($src -match '_bin|80_ops/winsw') {
 		Write-Host ('  NG   ' + $name + ' が、旧い置き場（_bin・tools/80_ops/winsw）を指している')

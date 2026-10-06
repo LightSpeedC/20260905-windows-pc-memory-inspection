@@ -5,7 +5,7 @@
 .DESCRIPTION
 	deploy/ に、実行ファイル・winsw・winsw の定義（XML。Git に入れてある）をそろえ、サービスを導入して起動する。
 	すでに導入済みなら、止めて入れ直す（定義や実行ファイルの更新を反映するため）。
-	事前に tools/20_build/build-collector.ps1 で deploy/rust-ai-pc-memory-collector.exe を作っておく。
+	事前に tools/20_build/build-pc-memory-collector.ps1 で deploy/rust-ai-pc-memory-collector.exe を作っておく。
 
 	【winsw の実行ファイル】
 	Git に入れない。ai-chat-lite の winsw を複製して使う（既定: T:/ai-chat-lite/node-ai-chat-lite-winsw.exe）。
@@ -118,7 +118,7 @@ try {
 	$exe = Join-Path $binDir 'rust-ai-pc-memory-collector.exe'
 	if (-not (Test-Path -LiteralPath $exe)) {
 		Write-Host ('実行ファイルがありません: ' + $exe) -ForegroundColor Red
-		Write-Host '先に tools/20_build/build-collector.cmd を実行してください。'
+		Write-Host '先に tools/20_build/build-pc-memory-collector.cmd を実行してください。'
 		Complete-Script 1
 	}
 	if (-not (Test-Path -LiteralPath $winsw)) {

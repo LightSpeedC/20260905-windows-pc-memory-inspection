@@ -1,4 +1,4 @@
-// 収集（rust-ai-pc-memory-collector）が止まっていないかを確かめ、結果を logs/check-collector.log に残す。
+// 収集（rust-ai-pc-memory-collector）が止まっていないかを確かめ、結果を logs/check-pc-memory-collector.log に残す。
 // 1 分ごとの行（system_memory）の新しさと、毎日のバックアップの有無を見る。
 // 最初の異常は「再確認待ち」としてログだけに残し、続けて異常のとき（10 分おきの次の確認）だけ、
 // トースト通知を出す（「ログを開く」ボタン付き）。スリープ明けの一時的な遅れで、通知しないため。
@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
-import { confirmedAgain, judgeBackup, judgeCollector } from './lib/collector.ts';
+import { confirmedAgain, judgeBackup, judgeCollector } from './lib/pc-memory-collector.ts';
 import { appendLog, parseLogTimestamp } from './lib/log.ts';
 import { formatPending, formatResult } from './lib/report.ts';
 import { showToast } from './lib/toast.ts';
@@ -17,7 +17,7 @@ import { showToast } from './lib/toast.ts';
 const argv = process.argv.slice(2);
 const baseArg = argv.find((a) => a.toLowerCase().startsWith('base:'));
 const root = baseArg ? baseArg.slice('base:'.length) : join(import.meta.dirname, '..', '..');
-const logFile = join(root, 'logs', 'check-collector.log');
+const logFile = join(root, 'logs', 'check-pc-memory-collector.log');
 mkdirSync(dirname(logFile), { recursive: true });
 const dbPath = join(root, '_data', 'pc-memory.db');
 const backupDir = join(root, '_backup');

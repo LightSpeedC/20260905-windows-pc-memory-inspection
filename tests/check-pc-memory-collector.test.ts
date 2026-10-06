@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { confirmedAgain, judgeBackup, judgeCollector } from '../tools/80_ops/lib/collector.ts';
+import { confirmedAgain, judgeBackup, judgeCollector } from '../tools/80_ops/lib/pc-memory-collector.ts';
 import { parseLogTimestamp } from '../tools/80_ops/lib/log.ts';
 
 // 時刻はすべて JST で書き、エポック（ミリ秒）にする
@@ -58,7 +58,7 @@ test('毎日のバックアップ以外のファイル名は数えない', () =>
 // 実物と同じ列名・日時の形（JST の 23 文字）の DB を作って、検知を通す。
 // 列名や日時の形が変わっても、検知が「DB を読めません」で黙って異常になる、のを防ぐ
 test('実物と同じ形の DB を読んで、収集が動いていれば正常と判定する', () => {
-	const base = mkdtempSync(join(tmpdir(), 'check-collector-'));
+	const base = mkdtempSync(join(tmpdir(), 'check-pc-memory-collector-'));
 	try {
 		mkdirSync(join(base, '_data'));
 		mkdirSync(join(base, '_backup'));
@@ -71,12 +71,12 @@ test('実物と同じ形の DB を読んで、収集が動いていれば正常�
 			INSERT INTO collector_event (occurred_at, event_kind, event_message) VALUES ('2026/09/01 00:00:00.000', 'start', 'x');
 		`);
 		db.close();
-		const r = spawnSync(process.execPath, [join(import.meta.dirname, '..', 'tools', '80_ops', 'check-collector.ts'), `base:${base}`, 'now:2026-10-04T22:00:00+09:00'], {
+		const r = spawnSync(process.execPath, [join(import.meta.dirname, '..', 'tools', '80_ops', 'check-pc-memory-collector.ts'), `base:${base}`, 'now:2026-10-04T22:00:00+09:00'], {
 			encoding: 'utf8',
 			timeout: 30_000,
 		});
 		assert.equal(r.status, 0, r.stderr);
-		const log = readFileSync(join(base, 'logs', 'check-collector.log'), 'utf8');
+		const log = readFileSync(join(base, 'logs', 'check-pc-memory-collector.log'), 'utf8');
 		assert.match(log, /✅ 正常/, log);
 		assert.doesNotMatch(log, /DB を読めません/, log);
 	} finally {

@@ -1,11 +1,11 @@
-﻿# build-collector.ps1 の、exe の置き替え（Set-ExeFile）の回帰テスト。
+﻿# build-pc-memory-collector.ps1 の、exe の置き替え（Set-ExeFile）の回帰テスト。
 # サービスが動いている間は、deploy/ の exe が掴まれていて、上書きも削除もできない。
 # Windows は、実行中の exe の名前を変える（退避する）ことはできるので、退避してから新しい exe を置く。
 # 動いている旧い exe は、そのまま動き続ける（サービスの再起動で、新しい exe に切り替わる）。
 
 $ErrorActionPreference = 'Stop'
 
-$target = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/20_build/build-collector.ps1'
+$target = Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/20_build/build-pc-memory-collector.ps1'
 if (-not (Test-Path -LiteralPath $target)) {
 	Write-Host ('対象が見つからない: ' + $target)
 	exit 1
