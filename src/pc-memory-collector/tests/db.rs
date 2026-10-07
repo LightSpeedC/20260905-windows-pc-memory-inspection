@@ -37,7 +37,83 @@ fn columns(c: &Connection, table: &str) -> Vec<String> {
 }
 
 fn mem() -> SystemMemory {
-    SystemMemory { phys_total: 1000, phys_avail: 500, swap_total: None, swap_used: None, commit_limit: None, commit_used: None }
+    SystemMemory {
+        phys_total: 1000,
+        phys_avail: 500,
+        swap_total: None,
+        swap_used: None,
+        commit_limit: None,
+        commit_used: None,
+        pagefile_used: None,
+        pagefile_peak: None,
+        kernel_paged: None,
+        kernel_nonpaged: None,
+        system_cache: None,
+    }
+}
+
+// 版 2 で足した列。版 1 の swap_used は commit_used − phys_total の計算値で、実際のページファイルの使用ではない（i261007-01）
+#[test]
+fn 版_2_で_ページファイルの実使用と_カーネルのプールとキャッシュの列が増える() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = open(dir.path());
+    assert_eq!(count(&c, "versions"), 2);
+    assert_eq!(
+        columns(&c, "system_memory"),
+        [
+            "measured_at", "phys_total", "phys_avail", "swap_total", "swap_used", "commit_limit", "commit_used", "pagefile_used", "pagefile_peak",
+            "kernel_paged", "kernel_nonpaged", "system_cache"
+        ]
+    );
+}
+
+#[test]
+fn 版_2_の列を書いて読める_取れなかった値は_null() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = open(dir.path());
+    let mut m = mem();
+    m.pagefile_used = Some(2 * 1024 * MB);
+    m.kernel_nonpaged = Some(3 * MB);
+    insert_system_memory(&c, 60_000, &m).unwrap();
+    let row: (Option<i64>, Option<i64>, Option<i64>) = c
+        .query_row("SELECT pagefile_used, pagefile_peak, kernel_nonpaged FROM system_memory", [], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+        .unwrap();
+    assert_eq!(row, (Some(2 * 1024 * MB as i64), None, Some(3 * MB as i64)));
+}
+
+// 実際に動いている DB は版 1 のまま。行を失わず、控え（zip）を取って、版 2 へ上がる
+#[test]
+fn 版_1_の_db_を開くと_行を残したまま_版_2_へ上がり_控えが取られる() {
+    use rust_ai_pc_memory_collector::migrate::{embedded_versions, migrate};
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("pc-memory.db");
+    {
+        let mut c = Connection::open(&path).unwrap();
+        migrate(&mut c, &embedded_versions()[..1], None, 1_000).unwrap();
+        c.execute("INSERT INTO system_memory (measured_at, phys_total, phys_avail) VALUES (?1, 1, 1)", [format_jst(60_000)]).unwrap();
+    }
+    let c = open(dir.path());
+    assert_eq!(count(&c, "system_memory"), 1, "行が失われた");
+    let n: Option<i64> = c.query_row("SELECT pagefile_used FROM system_memory", [], |r| r.get(0)).unwrap();
+    assert_eq!(n, None, "過去の行の新しい列は NULL のまま");
+    assert_eq!(count(&c, "versions"), 2);
+    let zips: Vec<String> = std::fs::read_dir(dir.path().join("backup")).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+    assert!(zips.iter().any(|n| n.starts_with("pre-ver-000001-")), "上げる前の控えが無い: {zips:?}");
+}
+
+// 実機では、5 つとも取れる（取れないなら NULL に倒れて、このテストが気づかせる）
+#[cfg(windows)]
+#[test]
+fn windows_では_ページファイルとカーネルのプールとキャッシュを取れる() {
+    use rust_ai_pc_memory_collector::collect::{Source, SysinfoSource};
+    let m = SysinfoSource::new().system_memory();
+    let used = m.pagefile_used.expect("pagefile_used が取れない");
+    let peak = m.pagefile_peak.expect("pagefile_peak が取れない");
+    assert!(peak >= used, "ピーク {peak} が使用 {used} より小さい");
+    assert!(m.kernel_paged.expect("kernel_paged") > 0);
+    assert!(m.kernel_nonpaged.expect("kernel_nonpaged") > 0);
+    assert!(m.system_cache.expect("system_cache") > 0);
+    assert!(m.pagefile_used.unwrap() <= m.swap_total.unwrap_or(u64::MAX), "使用がページファイルの合計を超えている");
 }
 
 #[test]
@@ -47,7 +123,7 @@ fn 初回の起動で_テーブルがそろい_版が記録される() {
     for t in ["system_memory", "process_snapshot", "process_sample", "command_line", "collector_event", "versions"] {
         assert!(count(&c, t) >= 0, "{t} が無い");
     }
-    assert_eq!(count(&c, "versions"), 1);
+    assert_eq!(count(&c, "versions"), 2);
 }
 
 #[test]
@@ -55,7 +131,7 @@ fn もう一度開いても_版は増えない() {
     let dir = tempfile::tempdir().unwrap();
     drop(open(dir.path()));
     let c = open(dir.path());
-    assert_eq!(count(&c, "versions"), 1);
+    assert_eq!(count(&c, "versions"), 2);
 }
 
 // 命名の決まり（ai-chat-lite に合わせる）: 主キーは <テーブル>_id、外部キーは参照先の主キーと同じ名前、日時は _at、略語を使わない
@@ -65,7 +141,10 @@ fn 列名は_命名の決まりどおり() {
     let c = open(dir.path());
     assert_eq!(
         columns(&c, "system_memory"),
-        ["measured_at", "phys_total", "phys_avail", "swap_total", "swap_used", "commit_limit", "commit_used"]
+        [
+            "measured_at", "phys_total", "phys_avail", "swap_total", "swap_used", "commit_limit", "commit_used", "pagefile_used", "pagefile_peak",
+            "kernel_paged", "kernel_nonpaged", "system_cache"
+        ]
     );
     assert_eq!(
         columns(&c, "process_snapshot"),
@@ -102,7 +181,7 @@ fn システムのメモリを_1_行書き_最新の時刻を読める() {
     let dir = tempfile::tempdir().unwrap();
     let c = open(dir.path());
     assert_eq!(latest_system_memory_ts(&c).unwrap(), None);
-    let m = SystemMemory { phys_total: 32 * 1024 * MB, phys_avail: 10 * 1024 * MB, swap_total: Some(18 * 1024 * MB), swap_used: Some(MB), commit_limit: None, commit_used: None };
+    let m = SystemMemory { phys_total: 32 * 1024 * MB, phys_avail: 10 * 1024 * MB, swap_total: Some(18 * 1024 * MB), swap_used: Some(MB), commit_limit: None, commit_used: None, ..mem() };
     insert_system_memory(&c, 60_000, &m).unwrap();
     insert_system_memory(&c, 120_000, &m).unwrap();
     assert_eq!(latest_system_memory_ts(&c).unwrap(), Some(120_000));

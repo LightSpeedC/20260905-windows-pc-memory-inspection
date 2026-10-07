@@ -11,7 +11,19 @@ fn names(dir: &std::path::Path) -> Vec<String> {
 }
 
 fn mem() -> SystemMemory {
-    SystemMemory { phys_total: 1, phys_avail: 1, swap_total: None, swap_used: None, commit_limit: None, commit_used: None }
+    SystemMemory {
+        phys_total: 1,
+        phys_avail: 1,
+        swap_total: None,
+        swap_used: None,
+        commit_limit: None,
+        commit_used: None,
+        pagefile_used: None,
+        pagefile_peak: None,
+        kernel_paged: None,
+        kernel_nonpaged: None,
+        system_cache: None,
+    }
 }
 
 #[test]

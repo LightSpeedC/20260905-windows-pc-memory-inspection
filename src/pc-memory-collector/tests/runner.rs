@@ -14,7 +14,19 @@ impl Source for Fake {
         self.is_admin
     }
     fn system_memory(&mut self) -> SystemMemory {
-        SystemMemory { phys_total: 1000, phys_avail: 500, swap_total: None, swap_used: None, commit_limit: None, commit_used: None }
+        SystemMemory {
+            phys_total: 1000,
+            phys_avail: 500,
+            swap_total: None,
+            swap_used: None,
+            commit_limit: None,
+            commit_used: None,
+            pagefile_used: None,
+            pagefile_peak: None,
+            kernel_paged: None,
+            kernel_nonpaged: None,
+            system_cache: None,
+        }
     }
     fn processes(&mut self) -> (u32, Vec<ProcessInfo>) {
         let p = ProcessInfo {

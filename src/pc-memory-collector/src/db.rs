@@ -42,9 +42,24 @@ pub fn checkpoint_truncate(conn: &Connection) -> Result<(), String> {
 pub fn insert_system_memory(conn: &Connection, ts_ms: i64, m: &SystemMemory) -> rusqlite::Result<()> {
     let n = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
     conn.execute(
-        "INSERT OR REPLACE INTO system_memory (measured_at, phys_total, phys_avail, swap_total, swap_used, commit_limit, commit_used)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![format_jst(ts_ms), n(m.phys_total), n(m.phys_avail), m.swap_total.map(n), m.swap_used.map(n), m.commit_limit.map(n), m.commit_used.map(n)],
+        "INSERT OR REPLACE INTO system_memory
+           (measured_at, phys_total, phys_avail, swap_total, swap_used, commit_limit, commit_used,
+            pagefile_used, pagefile_peak, kernel_paged, kernel_nonpaged, system_cache)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+        params![
+            format_jst(ts_ms),
+            n(m.phys_total),
+            n(m.phys_avail),
+            m.swap_total.map(n),
+            m.swap_used.map(n),
+            m.commit_limit.map(n),
+            m.commit_used.map(n),
+            m.pagefile_used.map(n),
+            m.pagefile_peak.map(n),
+            m.kernel_paged.map(n),
+            m.kernel_nonpaged.map(n),
+            m.system_cache.map(n)
+        ],
     )
     .map(|_| ())
 }

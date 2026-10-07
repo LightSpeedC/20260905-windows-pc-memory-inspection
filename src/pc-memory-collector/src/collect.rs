@@ -11,6 +11,16 @@ pub struct SystemMemory {
     pub swap_used: Option<u64>,
     pub commit_limit: Option<u64>,
     pub commit_used: Option<u64>,
+    /// 実際のページファイルの使用量（swap_used は commit からの計算値で、実使用ではない）
+    pub pagefile_used: Option<u64>,
+    /// 起動してからの、ページファイル使用量のピーク
+    pub pagefile_peak: Option<u64>,
+    /// カーネルのページング可能プール
+    pub kernel_paged: Option<u64>,
+    /// カーネルのページング不可プール
+    pub kernel_nonpaged: Option<u64>,
+    /// システムキャッシュ
+    pub system_cache: Option<u64>,
 }
 
 /// 1 時間ごとのプロセス 1 件
@@ -85,6 +95,7 @@ impl Source for SysinfoSource {
     fn system_memory(&mut self) -> SystemMemory {
         self.sys.refresh_memory();
         let (commit_limit, commit_used) = platform::commit();
+        let d = platform::detail();
         SystemMemory {
             phys_total: self.sys.total_memory(),
             phys_avail: self.sys.available_memory(),
@@ -93,6 +104,11 @@ impl Source for SysinfoSource {
             swap_used: Some(self.sys.used_swap()).filter(|_| self.sys.total_swap() > 0),
             commit_limit,
             commit_used,
+            pagefile_used: d.pagefile_used,
+            pagefile_peak: d.pagefile_peak,
+            kernel_paged: d.kernel_paged,
+            kernel_nonpaged: d.kernel_nonpaged,
+            system_cache: d.system_cache,
         }
     }
 
@@ -123,8 +139,19 @@ impl Source for SysinfoSource {
     }
 }
 
+/// コミットの内訳を調べる値（OS ごとに取れる範囲が違う。取れないものは None）
+#[derive(Debug, Default)]
+struct Detail {
+    pagefile_used: Option<u64>,
+    pagefile_peak: Option<u64>,
+    kernel_paged: Option<u64>,
+    kernel_nonpaged: Option<u64>,
+    system_cache: Option<u64>,
+}
+
 #[cfg(windows)]
 mod platform {
+    use super::Detail;
     use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
     use windows_sys::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
     use windows_sys::Win32::System::ProcessStatus::{GetPerformanceInfo, PERFORMANCE_INFORMATION};
@@ -165,10 +192,93 @@ mod platform {
             (Some(pi.CommitLimit as u64 * page), Some(pi.CommitTotal as u64 * page))
         }
     }
+
+    // SYSTEM_PAGEFILE_INFORMATION（NtQuerySystemInformation の 18 番）。ページファイル 1 つにつき 1 件が連なる。単位はページ
+    #[repr(C)]
+    struct PagefileEntry {
+        next_entry_offset: u32,
+        total_size: u32,
+        total_in_use: u32,
+        peak_usage: u32,
+    }
+
+    #[link(name = "ntdll")]
+    extern "system" {
+        fn NtQuerySystemInformation(class: u32, info: *mut core::ffi::c_void, length: u32, return_length: *mut u32) -> i32;
+    }
+
+    // (使用量, ピーク)。すべてのページファイルの合計。byte
+    fn pagefile(page: u64) -> (Option<u64>, Option<u64>) {
+        const SYSTEM_PAGEFILE_INFORMATION: u32 = 18;
+        const STATUS_INFO_LENGTH_MISMATCH: i32 = 0xC000_0004u32 as i32;
+        let mut buf = vec![0u8; 4096];
+        for _ in 0..4 {
+            let mut returned = 0u32;
+            // SAFETY: buf は length 以上の大きさで、OS が書き込む範囲に収まる。足りなければ STATUS_INFO_LENGTH_MISMATCH が返る
+            let status = unsafe { NtQuerySystemInformation(SYSTEM_PAGEFILE_INFORMATION, buf.as_mut_ptr().cast(), buf.len() as u32, &mut returned) };
+            if status == STATUS_INFO_LENGTH_MISMATCH {
+                buf = vec![0u8; (returned as usize).max(buf.len() * 2)];
+                continue;
+            }
+            if status < 0 {
+                return (None, None);
+            }
+            let (mut used, mut peak, mut offset) = (0u64, 0u64, 0usize);
+            // ページファイルが 1 つも無いときは、先頭の 4 バイトが 0 のまま（合計 0 になる）。0 は「使っていない」と読めるため NULL にする
+            let mut found = false;
+            loop {
+                if offset + std::mem::size_of::<PagefileEntry>() > buf.len() {
+                    break;
+                }
+                // SAFETY: 範囲を確かめた。アラインが保証されないので、読み出しは unaligned
+                let e = unsafe { std::ptr::read_unaligned(buf.as_ptr().add(offset).cast::<PagefileEntry>()) };
+                if e.total_size == 0 && e.next_entry_offset == 0 {
+                    break;
+                }
+                found = true;
+                used += e.total_in_use as u64 * page;
+                peak += e.peak_usage as u64 * page;
+                if e.next_entry_offset == 0 {
+                    break;
+                }
+                offset += e.next_entry_offset as usize;
+            }
+            return if found { (Some(used), Some(peak)) } else { (None, None) };
+        }
+        (None, None)
+    }
+
+    pub fn detail() -> Detail {
+        // SAFETY: commit() と同じ規約で渡す
+        let pi = unsafe {
+            let mut pi: PERFORMANCE_INFORMATION = std::mem::zeroed();
+            pi.cb = std::mem::size_of::<PERFORMANCE_INFORMATION>() as u32;
+            if GetPerformanceInfo(&mut pi, pi.cb) == 0 {
+                return Detail::default();
+            }
+            pi
+        };
+        let page = pi.PageSize as u64;
+        let (pagefile_used, pagefile_peak) = pagefile(page);
+        Detail {
+            pagefile_used,
+            pagefile_peak,
+            kernel_paged: Some(pi.KernelPaged as u64 * page),
+            kernel_nonpaged: Some(pi.KernelNonpaged as u64 * page),
+            system_cache: Some(pi.SystemCache as u64 * page),
+        }
+    }
 }
 
 #[cfg(target_os = "linux")]
 mod platform {
+    use super::Detail;
+
+    // まだ実装しない（実機で確かめられないため）。すべて NULL
+    pub fn detail() -> Detail {
+        Detail::default()
+    }
+
     // root かどうかの判定は、まだ実装しない（実機で確かめられないため、常に false。対応は別に行う）
     pub fn is_admin() -> bool {
         false
@@ -189,6 +299,12 @@ mod platform {
 
 #[cfg(not(any(windows, target_os = "linux")))]
 mod platform {
+    use super::Detail;
+
+    pub fn detail() -> Detail {
+        Detail::default()
+    }
+
     pub fn is_admin() -> bool {
         false
     }
