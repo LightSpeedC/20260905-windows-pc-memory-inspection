@@ -115,6 +115,7 @@ WS合計・コミット合計も同じ px/MB の目盛りに揃えて赤バー�
 <li>結果は、<code>_data/request/comp/</code>（完了。新しい版が書かれる）か <code>error/</code>（失敗。理由が書かれる）に出る。再起動の間（約 10 秒）は、収集が止まる。毎分の区切りの直後に行うと、行が欠けない。</li>
 <li>ビルドせずに再起動だけ頼むときは、<code>tools\80_ops\request-restart.cmd</code>。</li>
 <li><strong>受信箱を持たない古い版</strong>が動いているときだけ、管理者で <code>deploy\rust-ai-pc-memory-collector-winsw.exe restart</code> する。</li>
+<li><strong>いまのプロセスの状態を調べたいとき</strong>（メモリが急に増えた等）は、<code>tools\80_ops\request-inspect.cmd top:20</code>。管理者は要らず、再起動もしない。コミットの大きい上位と、システム全体の値が表示される。結果は <code>_data/request/comp/</code> にも残る（コマンドラインは入らない）。</li>
 </ol>
 
 <p><code>install-pc-memory-collector-service.cmd</code> は、定義や winsw を変えたときの<strong>登録の作り直し用</strong>。exe だけを替えるときは使わない（毎回、停止・削除・再登録が走り、管理者の操作が増える）。</p>

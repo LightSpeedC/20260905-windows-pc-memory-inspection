@@ -495,7 +495,7 @@ _data/request/error/req-20261006-233700.json   失敗（理由を書き足す）
 </pre>
 <ul>
 <li><strong>置き場</strong>は <code>_data/request/{inbox,proc,comp,error}</code>（Git 管理外）。<strong>ファイル名</strong>は <code>req-yyyymmdd-hhmmss.json</code>（JST。同じ秒に 2 件なら、末尾に <code>-2</code> 等の連番）</li>
-<li><strong>依頼の中身</strong>は <code>{"action":"restart"}</code>。<strong>動作は <code>restart</code> だけ</strong>で始める（<code>checkpoint</code> 等は、必要になってから足す）。任意の <code>note</code>（依頼の理由。200 文字まで）を書ける</li>
+<li><strong>依頼の中身</strong>は <code>{"action":"restart"}</code>。<strong>動作は <code>restart</code> で始め、10-07 に <code>inspect</code> を足した</strong>（次の「依頼 <code>inspect</code>」。<code>checkpoint</code> 等は、必要になってから足す）。任意の <code>note</code>（依頼の理由。200 文字まで）を書ける</li>
 <li><strong>受け取る</strong>のは、<code>inbox/</code> の <code>req-*.json</code> だけ。<code>.tmp</code> は無視する。<strong>名前を変える操作（rename）で受け取る</strong>ので、同時に 2 回受け取ることはない</li>
 </ul>
 
@@ -516,7 +516,7 @@ _data/request/error/req-20261006-233700.json   失敗（理由を書き足す）
 
 <h3>安全性</h3>
 <ul>
-<li><strong>依頼から、コマンドは実行しない。</strong>動作の名前を、決まった一覧（<code>restart</code>）と照合する</li>
+<li><strong>依頼から、コマンドは実行しない。</strong>動作の名前を、決まった一覧（<code>restart</code>・<code>inspect</code>）と照合する</li>
 <li>次のものは、<code>error/</code> へ移し、理由を書き足す: JSON として読めない・大きさが 4 KB を超える・<code>action</code> が一覧に無い・名前が <code>req-*.json</code> の形でない・<code>note</code> が長すぎる。<strong>黙って捨てない</strong></li>
 <li>前回の再起動の依頼が <code>proc/</code> に残っていて、再起動以外・読めないものは、<code>error/</code> へ移し「中断された」と書く</li>
 <li><code>inbox/</code> は、ログオンしたユーザーが書ける（<code>_data/</code> の権限）。サービスは LocalSystem で動くので、<strong>依頼できる動作を最小にして、被害を再起動 1 回に限る</strong></li>
@@ -576,7 +576,7 @@ _data/request/error/req-20261006-233700.json   失敗（理由を書き足す）
 <tr><td class="num">16</td><td><code>tools/80_ops/request-restart.ts</code> と、<code>build-pc-memory-collector -Restart</code>。テストを先に書く（<code>.tmp</code> → 名前変更・完了と失敗の待ち・時間切れ）。計画書の置き替え手順（手順 2）と、ローカルルールの節を、この流れに書き直す</td><td class="nowrap"><span class="badge b-ok">済</span>（道具・<code>-Restart</code>・テスト・計画書の置き替え手順の書き直し。<strong>ローカルルール（10-07）</strong>: 節 3 を受信箱の流れに書き直し、節 4（DB に資格情報が入りうる例外）・節 5（サービスの置き場）・節 2 への「セッションの開始時」の確認を追加）</td></tr>
 <tr><td class="num">17</td><td><strong>実環境で確かめる</strong>。実際のサービスに再起動を依頼し、新しい exe に切り替わる（<code>comp/</code> に新しい版）・行の欠けが 1〜2 件に収まる・不正な依頼が <code>error/</code> に出る・待機時のメモリが増えすぎない</td><td class="nowrap"><span class="badge b-ok">済</span>（10-07 00:06 に、<strong>一般ユーザーで</strong>再起動を依頼し、約 11 秒（winsw の待ち 10 秒を含む）で <code>comp/</code> に完了が出た。<code>note</code> も残る。区切りをまたがなかったので、行の欠けは 0 件。00:14 に、知らない動作の依頼を置くと、約 2 秒で <code>error/</code> に理由つきで移った。待機メモリは、上の手順 13 のとおり増えていない）</td></tr>
 <tr><td class="num">18</td><td><strong>版 2: システム全体の内訳を足す</strong>（上の「版 2」。課題 i261007-01 の 2-A）。先にテストを書く（新しい列・版 1 の DB から版 2 へ上がり、行が失われず、控えの zip ができる・ページファイルの使用量が読める・カーネルのプールが書かれる）。<strong>本番の DB を、初めて版 2 に上げる</strong>ので、実機で、控えの zip・行の保持・新しい列の値を確かめる</td><td class="nowrap"><span class="badge b-ok">済</span>（10-07。先にテストを書き、❌Red（7 件失敗）を確認してから実装し、✅Green。全件成功。<strong>本番の DB を版 2 に上げた</strong>: 15:37:58 に <code>pre-ver-000001-20261007153758.zip</code>（控え）ができ、行は 978 件のまま、15:38 の行から新しい 5 列に値が入った（過去の行は NULL）。実測: <code>pagefile_used</code> 1.7 GB・<code>pagefile_peak</code> 9.7 GB・<code>kernel_paged</code> 1.7 GB・<code>kernel_nonpaged</code> 1.6 GB・<code>system_cache</code> 4.6 GB。<strong>カーネルのプールは、約 3 GB で、コミットの急増の原因ではない</strong>）</td></tr>
-<tr><td class="num">19</td><td><strong>依頼 <code>inspect</code>（プロセスの状態の調査）</strong>（上の「依頼 <code>inspect</code>」。10-07 に 1-A・2-A・3-A で承認）。先にテストを書く（上位 N 件・並び順・範囲外の <code>top</code>/<code>sort</code> が <code>error/</code>・コマンドラインを結果に含めない・システム全体の値・プロセスは終了しない）。<code>tools/80_ops/request-inspect.ts</code> を足す</td><td class="nowrap"><span class="badge b-none">未</span>（承認済み。版 2 のあとに着手）</td></tr>
+<tr><td class="num">19</td><td><strong>依頼 <code>inspect</code>（プロセスの状態の調査）</strong>（上の「依頼 <code>inspect</code>」。10-07 に 1-A・2-A・3-A で承認）。先にテストを書く（上位 N 件・並び順・範囲外の <code>top</code>/<code>sort</code> が <code>error/</code>・コマンドラインを結果に含めない・システム全体の値・プロセスは終了しない）。<code>tools/80_ops/request-inspect.ts</code> を足す</td><td class="nowrap"><span class="badge b-ok">済</span>（10-07。先にテストを書き、❌Red を確認してから実装し、✅Green。<code>cargo test</code>（<code>tests/inspect.rs</code> 11 件・<code>tests/runner.rs</code> 1 件）と node・bun（<code>tests/request-inspect.test.ts</code> 8 件）。全件成功。<strong>実サービスで確認</strong>: 18:20 に、一般ユーザーから <code>request-inspect.cmd top:12</code> を実行し、約 4 秒で <code>comp/</code> に結果が出た。上位は <code>llama-server.exe</code> が、コミット 19.5 GB で最大。結果にコマンドライン・実行ファイルのパスは入らない）</td></tr>
 </tbody>
 </table></div>
 <div class="callout callout-important">

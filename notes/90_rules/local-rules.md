@@ -52,6 +52,7 @@ cron とは別に、**セッションを開いたら、`logs/check-report.log`�
 2. 結果は、`_data/request/comp/`（完了。新しい版が書かれる）か `error/`（失敗。理由が書かれる）に出る。再起動の間（約 10 秒）は、収集が止まる。毎分の区切りの直後に行うと、行が欠けない。
 3. ビルドせずに再起動だけ頼むときは、`tools\80_ops\request-restart.cmd`。
 4. **受信箱を持たない古い版**が動いているときだけ、管理者で `deploy\rust-ai-pc-memory-collector-winsw.exe restart` する。
+5. **いまのプロセスの状態を調べたいとき**（メモリが急に増えた等）は、`tools\80_ops\request-inspect.cmd top:20`。管理者は要らず、再起動もしない。コミットの大きい上位と、システム全体の値が表示される。結果は `_data/request/comp/` にも残る（コマンドラインは入らない）。
 
 `install-pc-memory-collector-service.cmd` は、定義や winsw を変えたときの**登録の作り直し用**。exe だけを替えるときは使わない（毎回、停止・削除・再登録が走り、管理者の操作が増える）。
 
