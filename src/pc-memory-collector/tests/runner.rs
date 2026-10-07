@@ -220,6 +220,23 @@ fn 起動時に_処理中に残った再起動の依頼を完了にし_イベン
     assert_eq!(count(c.conn(), "SELECT COUNT(*) FROM collector_event WHERE event_kind = 'request'"), 1);
 }
 
+// 収集が、依頼の時点のプロセスの一覧を取って、結果を書く。収集は止まらない（再起動を求めない）
+#[test]
+fn inspect_の依頼を受け取ると_結果を_comp_に書き_イベントに残し_再起動は求めない() {
+    let (d, mut c) = setup();
+    c.ensure_request_dirs(t(4, 9, 0, 0));
+    let root = d.path().join("_data").join("request");
+    std::fs::write(root.join("inbox").join("req-20261007-120000.json"), r#"{"action":"inspect","top":5}"#).unwrap();
+    assert!(!c.handle_requests(t(4, 9, 0, 0)), "inspect で再起動を求めた");
+    let text = std::fs::read_to_string(root.join("comp").join("req-20261007-120000.json")).expect("comp に結果が無い");
+    let j: serde_json::Value = serde_json::from_str(&text).unwrap();
+    assert_eq!(j["result"]["processes"].as_array().unwrap().len(), 1);
+    assert_eq!(j["result"]["system"]["phys_total"].as_u64(), Some(1000));
+    assert!(!text.contains("command_line"));
+    assert_eq!(std::fs::read_dir(root.join("proc")).unwrap().count(), 0, "処理中に残っている");
+    assert_eq!(count(c.conn(), "SELECT COUNT(*) FROM collector_event WHERE event_kind = 'request'"), 1);
+}
+
 fn start_message(c: &Collector<Fake>) -> String {
     c.conn().query_row("SELECT event_message FROM collector_event WHERE event_kind = 'start'", [], |r| r.get(0)).unwrap()
 }

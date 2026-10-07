@@ -5,7 +5,7 @@ use crate::backup::{backup_file_name, is_daily_backup, run_backup};
 use crate::collect::Source;
 use crate::config::Config;
 use crate::db::{checkpoint_truncate, insert_snapshot, insert_system_memory, record_event};
-use crate::request::{recover_proc, scan_inbox, RequestDirs};
+use crate::request::{complete_inspect, inspect_result, recover_proc, scan_inbox, RequestDirs};
 use crate::timeutil::{latest_slot, next_boundary};
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -83,6 +83,17 @@ impl<S: Source> Collector<S> {
         }
         for (name, reason) in &scan.rejected {
             let _ = record_event(&self.conn, now_ms, "request", &format!("依頼を受け付けませんでした（{name}）: {reason}"));
+        }
+        // inspect: 依頼の時点のプロセスの一覧を 1 回だけ取り、依頼ごとに、並び順と件数を変えて結果を書く。収集は止めない
+        if !scan.inspects.is_empty() {
+            let (_, procs) = self.source.processes();
+            let mem = self.source.system_memory();
+            let dirs = self.request_dirs();
+            for (name, p) in &scan.inspects {
+                let result = inspect_result(&procs, &mem, p.top, p.sort);
+                complete_inspect(&dirs, name, now_ms, env!("CARGO_PKG_VERSION"), &result);
+                let _ = record_event(&self.conn, now_ms, "request", &format!("状態の調査の依頼を完了しました（{name}）"));
+            }
         }
         scan.restart
     }
