@@ -370,7 +370,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <summary><span class="no">i261006-01</span>生成タスクが、スリープをまたぐと定時分を落とし、取り戻さない <span class="badge b-warn">着手</span></summary>
 
 <h2>状況</h2>
-<p>PC が長くスリープすると、6 時間ごとのレポート生成が欠ける。10-04 18:00（18:17 に遅れて実行）、10-05 12:00・18:00（20:47 の復帰直後に 1 回だけ追いかけ）、<strong>10-06 0:00・6:00（起動の記録なし）</strong>。検知タスクは同じ時間帯に動いており、10-06 0:45 と 6:45 に <code>❌ 異常</code> を記録した（案Aの再確認の流れが、実環境で働いた最初の例）。</p>
+<p>PC が長くスリープすると、6 時間ごとのレポート生成が欠ける。10-04 18:00（18:17 に遅れて実行）、10-05 12:00・18:00（20:47 の復帰直後に 1 回だけ追いかけ）、<strong>10-06 0:00・6:00（起動の記録なし）</strong>、<strong>10-08 0:00（バッテリー駆動。AC につないだ 0:49 に実行）</strong>。検知タスクは同じ時間帯に動いており、10-06 0:45 と 6:45 に <code>❌ 異常</code> を記録した（案Aの再確認の流れが、実環境で働いた最初の例）。</p>
 
 <h2>確認したこと（10-06）</h2>
 <div class="tablewrap"><table>
@@ -379,7 +379,7 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <tr><td class="nowrap">トリガー</td><td><strong>毎日 12:00 に起動する 1 本 ＋ 6 時間ごとの繰り返し（期間 1 日）</strong>。0:00・6:00・18:00 は、12:00 の繰り返しに依存する</td></tr>
 <tr><td class="nowrap">設定（調査時点）</td><td>「開始できなかった場合、すぐに実行する」<strong>オフ</strong>・スリープ解除オフ・AC 電源のときのみ開始オン・実行ユーザーのログオン種別は S4U・停止するまでの時間は設定 3 日／トリガー 30 分</td></tr>
 <tr><td class="nowrap">検知タスクとの違い</td><td>検知は<strong>独立した 8 トリガー ＋ 「開始できなかった場合、すぐに実行する」オン</strong>。同じスタンバイ中でも、全部動いた</td></tr>
-<tr><td class="nowrap">AC 電源</td><td>10-06 時点で AC・100%。電源の変更の記録も 10-05 20:47 以降なし。<strong>AC のみの条件は、今回の原因ではない</strong></td></tr>
+<tr><td class="nowrap">AC 電源</td><td>10-06 時点で AC・100%。電源の変更の記録も 10-05 20:47 以降なし。<strong>AC のみの条件は、今回（10-06）の原因ではない</strong>。<strong>10-08 00:00 の欠落では、これが原因だった</strong>（バッテリー駆動のあいだ起動せず、AC につないだ 00:49 に、逃した分が走った。下の行 5・6）</td></tr>
 <tr><td class="nowrap">雛形との食い違い</td><td>リポジトリの <code>ai-pc-inspect-process-memory.xml</code> の引数は <code>nopause noai</code>。実際のタスクは <code>nopause</code></td></tr>
 </tbody>
 </table></div>
@@ -394,6 +394,9 @@ $r = $r -replace ('(?&lt;![^\\/:"'' ])[^\\/:"'' ]*' + [regex]::Escape($script:Us
 <tr><td class="num">2</td><td>リポジトリの登録定義の雛形を直す。<code>StartWhenAvailable</code> を <code>true</code> にし、実行時間の上限（設定側 <code>PT72H</code>、トリガー側 <code>PT30M</code>）を<strong>どちらも <code>PT1H</code></strong> にし、引数の <code>noai</code> を削除して実際のタスクの <code>nopause</code> に揃えた（10-06）</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
 <tr><td class="num">3</td><td>生きているタスクへ反映する。タスクの「設定」タブの<strong>「スケジュールされた時刻にタスクを開始できなかった場合、すぐにタスクを実行する」をオン</strong>にした。あわせて<strong>停止するまでの時間を 2 か所とも 1 時間</strong>にした（10-06。利用者の操作）。「設定」タブの<strong>3 日 → 1 時間</strong>と、「トリガー」の編集の<strong>30 分 → 1 時間</strong>（2 つのうち短いほうが効く）。「新しいインスタンスを開始しない」のため、止まったまま残った実行が、以降の定時分を塞ぐのを防ぐ。1 回の実行は通常 5〜8 分（node 側の上限は ps1 10 分 ＋ <code>claude -p</code> 30 分）で、1 時間に収まる</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
 <tr><td class="num">4</td><td><strong>実環境で確かめる</strong>。スリープをまたいだあとの定時分が、取り戻されること。取り戻されなければ、案 A へ進む</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
+<tr><td class="num">5</td><td>雛形の電源の設定を直す。<code>DisallowStartIfOnBatteries</code>・<code>StopIfGoingOnBatteries</code> を、どちらも <code>false</code> にした（10-08）。雛形が「バッテリーでは起動しない」で、登録のスクリプト（バッテリーでも起動して止めない）と食い違っていた。10-06 の行 2 で雛形を直したとき、電源の設定を見直さなかった。先にテストを書き（<code>tests/task-xml-template.test.ts</code>）、❌Red を確認してから直した</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">6</td><td>生きているタスクへ反映する。「条件」タブの<strong>「AC 電源で使用している場合にのみタスクを開始する」をオフ</strong>にした。連動して、「バッテリに切り替える場合は停止する」もオフになった（10-08。利用者の操作）。10-08 00:00 の枠は、AC につないだ 00:49 に、逃した分が走った</td><td class="nowrap"><span class="badge b-ok">済</span></td></tr>
+<tr><td class="num">7</td><td><code>WakeToRun</code>（スリープから復帰させて実行）の食い違いを決める。登録のスクリプトは有効、雛形は無効。スリープ中の定時分を、復帰させて実行したいかによる</td><td class="nowrap"><span class="badge b-none">未</span></td></tr>
 </tbody>
 </table></div>
 </details>
