@@ -46,19 +46,14 @@ cron とは別に、**セッションを開いたら、`logs/check-report.log`�
 
 ## 3. サービスの exe の置き替え
 
-共通ルールには、動いているサービスの exe を置き替える決まりが無いため、このプロジェクトだけの決めごととして書く。
+考え方（実行中の exe は、名前を変えて退避してから置く。切り替えはサービスの再起動。管理者なしの再起動は、依頼のファイルで受ける）は、共通ルール「常駐サービスの置き場と、exe の置き替え（Windows）」に従う。**ここには、このプロジェクトの具体的なコマンドと値だけ**を書く。
 
-1. **`tools\20_build\build-pc-memory-collector.cmd -Restart`** で、ビルド → 置き替え → 再起動の依頼までを行う。管理者は要らない。
-    - 動いている exe は、削除も上書きもできないが、**名前を変えて `tmp/` へ退避することはできる**（`Set-ExeFile`）。サービスは止めない。
-    - 再起動は、**受信箱（`_data/request/inbox`）に依頼のファイルを置いて**行う。サービスが受け取り、終了コード 75 で終わり、winsw が新しい exe で起動し直す。
+1. **`tools\20_build\build-pc-memory-collector.cmd -Restart`** で、ビルド → 退避して置き替え → 再起動の依頼までを行う（管理者は要らない）。退避先は `tmp/`、受信箱は `_data/request/inbox`。
 2. 結果は、`_data/request/comp/`（完了。新しい版が書かれる）か `error/`（失敗。理由が書かれる）に出る。再起動の間（約 10 秒）は、収集が止まる。毎分の区切りの直後に行うと、行が欠けない。
 3. ビルドせずに再起動だけ頼むときは、`tools\80_ops\request-restart.cmd`。
 4. **受信箱を持たない古い版**が動いているときだけ、管理者で `deploy\rust-ai-pc-memory-collector-winsw.exe restart` する。
 
-`install-pc-memory-collector-service.cmd` は、定義や winsw を変えたときの**登録の作り直し用**。exe だけを替えるときは使わない。
-
-> [!NOTE]
-> **理由:** 導入スクリプトで入れ直すと、毎回、停止・削除・再登録が走り、管理者の操作が増える。受信箱の依頼なら、管理者なしで、結果（完了・失敗・時間切れ）まで確かめられる。
+`install-pc-memory-collector-service.cmd` は、定義や winsw を変えたときの**登録の作り直し用**。exe だけを替えるときは使わない（毎回、停止・削除・再登録が走り、管理者の操作が増える）。
 
 ## 4. DB とバックアップに、資格情報が入りうる
 
@@ -73,8 +68,8 @@ cron とは別に、**セッションを開いたら、`logs/check-report.log`�
 
 ## 5. サービスの置き場
 
-共通ルールの「デプロイ定義」の置き場（`deploy/`）を使う。このプロジェクトだけの決めごとを、次に書く。
+共通ルール「常駐サービスの置き場と、exe の置き替え（Windows）」に従う。**このプロジェクトの値**だけを、次に書く。
 
-- **定義の XML は `deploy/`（Git 管理）。exe（ビルドした本体・winsw の複製）とログは、同じ `deploy/` に置くが、Git に入れない**（`.gitignore`）。ビルド出力は、Rust の既定の `target/`。
-- **導入は、一般ユーザーのコマンドプロンプトから行う**（`tools\70_deploy\install-pc-memory-collector-service.cmd`）。自動で管理者へ昇格し、パスも実体へ直して渡す。**管理者のコンソールを直接開いて実行すると、`T:` や `W:` が見えず、winsw の複製元を見失う。**
-- **サービスに登録するパスは、実体のパス（subst のドライブではない）**。subst はログオンセッションごとに閉じていて、OS の再起動後に、サービスが起動できなくなる。導入の最後に表示される「登録された実行ファイル」が、`C:\` で始まっていることを見る。
+- **置き場**: 定義は `deploy/rust-ai-pc-memory-collector-winsw.xml`（Git 管理）。exe（本体と winsw の複製）は `deploy/*.exe`（`.gitignore` で除外）、ログは `deploy/logs/`。ビルド出力は `src/pc-memory-collector/target/`。
+- **導入**: 一般ユーザーのコマンドプロンプトから `tools\70_deploy\install-pc-memory-collector-service.cmd`。自動で管理者へ昇格する。管理者のコンソールを直接開くと、`T:` や `W:` が見えず、winsw の複製元（`T:/ai-chat-lite/` の winsw）を見失う。
+- **導入の最後に表示される「登録された実行ファイル」が、`C:\` で始まっていること**を見る（subst のドライブでないこと）。

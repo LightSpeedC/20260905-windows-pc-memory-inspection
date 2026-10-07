@@ -209,10 +209,10 @@
 </table></div>
 
 <h2>テーブル定義（版 1。手順 14 で、命名と日時を直した形）</h2>
-<p>正は <code>src/scripts/20_migrate/ver_000001/001-initial.sql</code>。全テーブルを <code>STRICT</code>（型を守らせる）にする。<strong>サイズは byte、日時は JST の 23 文字 TEXT</strong>。OS に無い値は NULL にする。</p>
+<p>正は <code>src/scripts/20_migrate/ver_000001/001-initial.sql</code>（<code>system_memory</code> の版 2 の列は <code>ver_000002/001-system-memory-detail.sql</code>）。全テーブルを <code>STRICT</code>（型を守らせる）にする。<strong>サイズは byte、日時は JST の 23 文字 TEXT</strong>。OS に無い値は NULL にする。</p>
 
 <h3>関係</h3>
-<svg viewBox="0 0 960 540" style="max-width:100%;height:auto" role="img" aria-label="テーブルの関係図（ER 図）" font-family="sans-serif" font-size="13">
+<svg viewBox="0 0 960 640" style="max-width:100%;height:auto" role="img" aria-label="テーブルの関係図（ER 図）" font-family="sans-serif" font-size="13">
 <defs>
 <linearGradient id="g-er-1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(280,78%,25%)"/><stop offset="1" stop-color="hsl(280,58%,55%)"/></linearGradient>
 <linearGradient id="g-er-2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="hsl(220,78%,25%)"/><stop offset="1" stop-color="hsl(220,58%,55%)"/></linearGradient>
@@ -267,14 +267,14 @@
 <text x="20" y="324" fill="#4a5568" font-size="12">下の 3 つは単独のテーブル（他のテーブルとは外部キーで結ばない）</text>
 
 <!-- system_memory -->
-<rect x="20" y="340" width="240" height="176" fill="#fff" stroke="hsl(100,78%,25%)" stroke-width="2"/>
+<rect x="20" y="340" width="240" height="276" fill="#fff" stroke="hsl(100,78%,25%)" stroke-width="2"/>
 <rect x="20" y="340" width="240" height="28" fill="url(#g-er-4)"/>
 <text x="32" y="359" fill="#fff" font-weight="700">system_memory（毎分）</text>
 <g fill="#1c2330">
-<text x="32" y="384">measured_at</text><text x="32" y="404">phys_total</text><text x="32" y="424">phys_avail</text><text x="32" y="444">swap_total</text><text x="32" y="464">swap_used</text><text x="32" y="484">commit_limit</text><text x="32" y="504">commit_used</text>
+<text x="32" y="384">measured_at</text><text x="32" y="404">phys_total</text><text x="32" y="424">phys_avail</text><text x="32" y="444">swap_total</text><text x="32" y="464">swap_used</text><text x="32" y="484">commit_limit</text><text x="32" y="504">commit_used</text><text x="32" y="524">pagefile_used</text><text x="32" y="544">pagefile_peak</text><text x="32" y="564">kernel_paged</text><text x="32" y="584">kernel_nonpaged</text><text x="32" y="604">system_cache</text>
 </g>
 <g fill="#4a5568" font-size="11" text-anchor="end">
-<text x="250" y="384">PK</text><text x="250" y="444">NULL 可</text><text x="250" y="464">NULL 可</text><text x="250" y="484">NULL 可</text><text x="250" y="504">NULL 可</text>
+<text x="250" y="384">PK</text><text x="250" y="444">NULL 可</text><text x="250" y="464">NULL 可</text><text x="250" y="484">NULL 可</text><text x="250" y="504">NULL 可</text><text x="250" y="524">NULL 可（版 2）</text><text x="250" y="544">NULL 可（版 2）</text><text x="250" y="564">NULL 可（版 2）</text><text x="250" y="584">NULL 可（版 2）</text><text x="250" y="604">NULL 可（版 2）</text>
 </g>
 
 <!-- collector_event -->
@@ -302,12 +302,27 @@
 <tr><td class="nowrap"><code>phys_total</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>物理メモリの合計</td></tr>
 <tr><td class="nowrap"><code>phys_avail</code></td><td class="nowrap">INTEGER</td><td class="nowrap">不可</td><td>物理メモリの空き</td></tr>
 <tr><td class="nowrap"><code>swap_total</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>スワップの合計。Windows ではページファイルの合計</td></tr>
-<tr><td class="nowrap"><code>swap_used</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>スワップの使用量</td></tr>
+<tr><td class="nowrap"><code>swap_used</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>スワップの使用量。<strong>実際のページファイルの使用ではなく、「コミットの使用量 − 物理メモリの合計」の計算値</strong>（実際の値は、版 2 の <code>pagefile_used</code>）</td></tr>
 <tr><td class="nowrap"><code>commit_limit</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>コミットの上限（Linux・Mac で取れないときは NULL）</td></tr>
 <tr><td class="nowrap"><code>commit_used</code></td><td class="nowrap">INTEGER</td><td class="nowrap">可</td><td>コミットの使用量</td></tr>
 </tbody>
 </table></div>
 <p>索引は主キーのみ（<code>measured_at</code> での範囲検索はこれで足りる）。</p>
+
+<h4>版 2（10-07）: システム全体の内訳を足す（課題 i261007-01 の 2-A）</h4>
+<p>10-06 23:23 のコミットの急増を、あとから追えるように、<code>system_memory</code> に列を足す（<code>ALTER TABLE … ADD COLUMN</code>。<code>ver_000002/</code>。導入済みの DB には、版を上げる前に控えを取ってから当てる）。すべて NULL 可（OS に無い値）。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>列</th><th>型</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td class="nowrap"><code>pagefile_used</code></td><td class="nowrap">INTEGER</td><td><strong>実際のページファイルの使用量</strong>（Windows は <code>NtQuerySystemInformation</code> の <code>SystemPageFileInformation</code>）。<code>swap_used</code> は計算値なので、こちらを見る</td></tr>
+<tr><td class="nowrap"><code>pagefile_peak</code></td><td class="nowrap">INTEGER</td><td>ページファイルの使用量のピーク（起動してからの最大）</td></tr>
+<tr><td class="nowrap"><code>kernel_paged</code></td><td class="nowrap">INTEGER</td><td>カーネルのページプール（<code>GetPerformanceInfo</code> の <code>KernelPaged</code>）</td></tr>
+<tr><td class="nowrap"><code>kernel_nonpaged</code></td><td class="nowrap">INTEGER</td><td>カーネルの非ページプール（<code>KernelNonpaged</code>）</td></tr>
+<tr><td class="nowrap"><code>system_cache</code></td><td class="nowrap">INTEGER</td><td>システムキャッシュ（<code>SystemCache</code>）</td></tr>
+</tbody>
+</table></div>
+<p><strong>実装（10-07）</strong>: ページファイルは、<code>ntdll</code> の <code>NtQuerySystemInformation</code>（種別 18）を直接呼び、すべてのページファイルの使用量とピークを合計する（ページ単位 × ページの大きさ）。ページファイルが 1 つも無いときは、0 ではなく NULL。カーネルのプールとキャッシュは、<code>GetPerformanceInfo</code> の値。Linux・Mac は、実機で確かめられないため、すべて NULL。過去の行は、取っていなかったので NULL のまま。</p>
+<p><strong>「コミット − プロセスの仮想メモリの合計」は、列にしない</strong>（毎時のスナップショットと、同じ分の <code>system_memory</code> から計算できる）。Linux・Mac は、まだ実装しない（NULL）。</p>
 
 <h3><code>process_snapshot</code>（1 時間ごとの親）</h3>
 <div class="tablewrap"><table>
@@ -381,23 +396,20 @@
 <p>版 1 の SQL には含まれず、起動時にプログラムが <code>CREATE TABLE IF NOT EXISTS</code> で作る（「どこまで当てたか」を持つ表なので、SQL の中には置けない）。</p>
 
 <h2>命名と日時の決まり（<code>ai-chat-lite</code> に合わせる）</h2>
-<p>日時の形式と列名を、<code>ai-chat-lite</code> の DB 定義（設計書の「列名の付け方」「インデックスの名前」、版 1〜3 の SQL）に合わせる。<strong>決めたのは 10-06</strong>。</p>
+<p>日時の形式・列名・NULL の扱いは、共通ルール「DB 定義のルール」に従う（<code>ai-chat-lite</code> の DB に合わせた形。決めたのは 10-06 で、10-07 に共通ルールへ上げた）。<strong>ここには、このプロジェクトの決めと、ルールが任せている点だけ</strong>を書く。</p>
 <div class="tablewrap"><table>
-<thead><tr><th>決まり</th><th>内容</th></tr></thead>
+<thead><tr><th>点</th><th>このプロジェクトの決め</th></tr></thead>
 <tbody>
-<tr><td class="nowrap">日時</td><td>JST の <code>yyyy/mm/dd hh:mm:ss.ccc</code>、固定 23 文字の TEXT。列名の語尾は <code>_at</code>。<strong><code>CHECK (length(列) = 23)</code> を付ける</strong>。辞書順がそのまま時系列順になる</td></tr>
-<tr><td class="nowrap">主キーと外部キー</td><td>主キーは <code>&lt;テーブル名&gt;_id</code>（<code>id</code> だけにしない）。<strong>外部キーの列名は、参照先の主キーと同じ名前</strong>にする（<code>process_sample.process_snapshot_id</code> → <code>process_snapshot.process_snapshot_id</code>）</td></tr>
-<tr><td class="nowrap">略語</td><td>単体で読んで意味が取れる名前にする（<code>ts</code> → <code>measured_at</code>、<code>cmdline</code> → <code>command_line</code>）。<strong>許容する略語（10-06 に決定）</strong>: <code>pid</code>・<code>parent_pid</code>（OS の用語）、<code>phys</code>・<code>avail</code>、<code>exe_path</code>。<strong>単位の <code>_bytes</code> は、<code>system_memory</code> の列では付けない</strong>（版 1 の SQL の先頭に「サイズは byte」と書く）</td></tr>
-<tr><td class="nowrap">型名と同じ名前</td><td>避ける（<code>text</code> → <code>command_line_body</code>）。DDL が <code>text TEXT</code> になって読みにくい</td></tr>
-<tr><td class="nowrap">索引の名前</td><td><code>&lt;テーブル名&gt;_ix_&lt;列&gt;_&lt;列&gt;</code>（<code>sqlite_master</code> を並べると、テーブルごとにまとまる）</td></tr>
-<tr><td class="nowrap">真偽値</td><td>列名を <code>is_</code> で始め、<code>INTEGER</code>（0 / 1）に <code>CHECK (列 IN (0, 1))</code> を付ける（<code>is_admin</code>）。SQLite に真偽値の型は無いため</td></tr>
-<tr><td class="nowrap">取れなかった値</td><td><strong>NULL にする。0 や空文字で埋めない</strong>（前の「注」）</td></tr>
-<tr><td class="nowrap">テーブル名</td><td>単数のまま。<code>ai-chat-lite</code> は複数形（<code>messages</code>）だが、<code>system_memory</code> のように複数形が不自然なものがあるため、揃えない</td></tr>
+<tr><td class="nowrap">許容する略語</td><td><code>pid</code>・<code>parent_pid</code>（OS の用語）、<code>phys</code>・<code>avail</code>、<code>exe_path</code>。<code>ts</code> → <code>measured_at</code>、<code>cmdline</code> → <code>command_line</code> のように、それ以外は書き下す</td></tr>
+<tr><td class="nowrap">単位</td><td><code>system_memory</code> の列は、単位の <code>_bytes</code> を付けない（版 1 の SQL の先頭に「サイズは byte」と書く）。<code>process_sample</code> は、<code>memory_bytes</code> 等、語尾に付ける</td></tr>
+<tr><td class="nowrap">テーブル名</td><td>単数（<code>system_memory</code> のように、複数形が不自然なものがあるため）。<code>ai-chat-lite</code> は複数形</td></tr>
+<tr><td class="nowrap">NULL の理由</td><td>権限が無くて読めなかったプロセスのメモリ・CPU 累計は NULL（前の「注」）。判定は「メモリが 0 で、かつパスが取れていない」</td></tr>
+<tr><td class="nowrap">swap の列</td><td><code>swap_total</code> はページファイルの大きさと一致するが、<strong><code>swap_used</code> は、<code>sysinfo</code> が返す「コミットの使用量 − 物理メモリの合計」の計算値</strong>（実際のページファイルの使用ではない）。版 1 は導入済みで書き換えられないため、版 2 で実際の値を足す</td></tr>
 </tbody>
 </table></div>
 
-<h2>スキーマの版管理（<code>ai-chat-lite</code> に倣う）</h2>
-<p>DB の形は、版で管理する。<code>CREATE TABLE IF NOT EXISTS</code> は、既にあるテーブルを作り替えない。列の削除・型の変更は、テーブルを作り直すしかなく、そのたびに専用の手順を書くことになる。<strong>SQL を版ごとのフォルダに置き、<code>versions</code> テーブルに「どこまで当てたか」を持つ</strong>形にする。</p>
+<h2>スキーマの版管理</h2>
+<p>共通ルール「DB 定義のルール」の「版管理」に従う。このプロジェクトの具体的な形を、次に書く。DB の形は、版で管理する。<code>CREATE TABLE IF NOT EXISTS</code> は、既にあるテーブルを作り替えない。列の削除・型の変更は、テーブルを作り直すしかなく、そのたびに専用の手順を書くことになる。<strong>SQL を版ごとのフォルダに置き、<code>versions</code> テーブルに「どこまで当てたか」を持つ</strong>形にする。</p>
 <div class="tablewrap"><table>
 <thead><tr><th>決まり</th><th>内容</th></tr></thead>
 <tbody>
@@ -517,6 +529,17 @@ _data/request/error/req-20261006-233700.json   失敗（理由を書き足す）
 <li><strong>ビルドとつなぐ</strong>: <code>build-pc-memory-collector</code> に <code>-Restart</code> を足し、置き替えのあとに、この道具を呼ぶ。<strong>ビルド → 退避 → 配置 → 再起動</strong>が、管理者なしの 1 コマンドになる</li>
 </ul>
 
+<h3>依頼 <code>inspect</code>（いまのプロセスの状態を、依頼で調べる。10-07 に承認）</h3>
+<p>毎時のスナップショットを待たずに、「いま、どのプロセスがメモリを使っているか」を調べる。コミットが急に増えたとき（i261007-01）に、1 時間後ではなく、その場で犯人を探すため。受信箱の流れは再起動と同じで、<strong>プロセスは終了しない</strong>。</p>
+<ul>
+<li><strong>依頼の中身</strong>（3-A）: <code>{"action":"inspect","top":20,"sort":"commit"}</code>。<code>sort</code> は <code>commit</code>（既定）か <code>working_set</code>。<code>top</code> は 1〜100（既定 20）。範囲外・知らない <code>sort</code> は <code>error/</code> へ理由つきで移す。<code>note</code> は再起動と同じ（200 文字まで）</li>
+<li><strong>返すもの</strong>（1-A）: <strong>上位 N 件</strong>のプロセス（<code>pid</code>・<code>process_name</code>・<code>commit_bytes</code>・<code>working_set_bytes</code>・<code>started_at</code>・<code>parent_pid</code>）と、システム全体の値（<code>system_memory</code> の全項目）。<strong>コマンドラインは返さない</strong>（結果のファイルにも、資格情報を残さない）。読めなかったプロセスの値は、0 ではなく null</li>
+<li><strong>結果の置き場</strong>（2-A）: <code>comp/</code> の完了のファイルに、<code>result</code> として書き足す（依頼と結果が 1 組になる）。DB には書かない（毎時のスナップショットと混ざらない）</li>
+<li><strong>流れ</strong>: 受け取って <code>proc/</code> → その場でプロセスの一覧を取り、書き足して <code>comp/</code>。再起動と違い、終了コード 75 では終わらず、収集は続く。<code>comp/</code>・<code>error/</code> の 100 件の枠は共通</li>
+<li><strong>依頼を出す道具</strong>: <code>tools/80_ops/request-inspect.ts</code>（<code>.cmd</code> 付き。<code>request-restart</code> と同形）。結果を表で表示する。引数は <code>top:</code>・<code>sort:</code></li>
+<li><strong>安全性</strong>: 依頼から、コマンドは実行しない。動作の一覧が <code>restart</code> と <code>inspect</code> の 2 つになる。<code>inspect</code> は読み取りだけで、被害は、一覧を取る負荷（数百 ms）に限る</li>
+</ul>
+
 <h2>検知（無言で止まらないために）</h2>
 <p>1 分ごとの行が<strong>そのまま生存確認</strong>になる。<strong>別の検知用タスク</strong>（<code>check-pc-memory-collector.ts</code>。10 分ごと）が、DB を読み取り専用で開いて次の 2 点を見る。結果は <code>logs/check-pc-memory-collector.log</code> に残す。</p>
 <ul>
@@ -545,13 +568,15 @@ _data/request/error/req-20261006-233700.json   失敗（理由を書き足す）
 <tr><td class="num">8</td><td>winsw の定義と、導入手順（管理者で install）を作る</td><td class="nowrap"><span class="badge b-ok">済</span>（作成のみ。<code>deploy/</code>（定義の XML）・<code>tools/70_deploy/install-pc-memory-collector-service.cmd</code>・<code>tools/20_build/build-pc-memory-collector.cmd</code>。導入は手順 11）</td></tr>
 <tr><td class="num">9</td><td>検知を、先にテストを書いて作る。<strong>収集は別のタスク（10 分ごと）で検知する</strong>（<code>check-pc-memory-collector.ts</code>。<code>register-check-task.ps1 -Target collector</code>）</td><td class="nowrap"><span class="badge b-ok">済</span>（実物の DB で、正常 → 再確認待ち → 異常＋トーストの流れを確認。登録は手順 11）</td></tr>
 <tr><td class="num">10</td><td>テストの一括実行（<code>tools/40_test/run-tests.ps1</code>）に <code>cargo test</code> を加える</td><td class="nowrap"><span class="badge b-ok">済</span>（ps1・node・bun・cargo の全件が通る）</td></tr>
-<tr><td class="num">11</td><td><strong>実環境で確かめる（稼働）</strong>。サービスを install し、1 分ごとに行が増える・毎時にスナップショットが入る・プロセスを止めると 10 秒後に再起動する・再起動（OS）後に自動で起動する・止めると検知が異常を出す</td><td class="nowrap"><span class="badge b-warn">着手</span>（10-06 に導入。✅ 1 分ごとに行が増える（23:21 から欠けなし）・✅ 00:00 に毎時のスナップショットが入る・✅ 再起動後も続く（管理者の再起動と、受信箱の依頼の再起動）・✅ 登録された実行ファイルは <code>C:\work\…\deploy\…</code> で、subst ではない。<strong>残り: プロセスを止めて 10 秒後に再起動するか・OS の再起動後に自動で起動するか・止めると検知が異常を出すか（検知タスクの登録が先）</strong>）</td></tr>
+<tr><td class="num">11</td><td><strong>実環境で確かめる（稼働）</strong>。サービスを install し、1 分ごとに行が増える・毎時にスナップショットが入る・プロセスを止めると 10 秒後に再起動する・再起動（OS）後に自動で起動する・止めると検知が異常を出す</td><td class="nowrap"><span class="badge b-warn">着手</span>（10-06 に導入。✅ 1 分ごとに行が増える（23:21 から欠けなし）・✅ 00:00 に毎時のスナップショットが入る・✅ 再起動後も続く（管理者の再起動と、受信箱の依頼の再起動）・✅ 登録された実行ファイルは <code>C:\work\…\deploy\…</code> で、subst ではない。✅ 検知タスク <code>ai-pc-check-pc-memory-collector</code> を登録し（10-07 06:57。10 分ごと）、タスクスケジューラから実際に 1 回動かして ✅ 正常（結果コード 0。ログ <code>logs/check-pc-memory-collector.log</code>）。✅ <strong>強制終了後の再起動</strong>（10-07 06:59:10 に、管理者が <code>taskkill /F</code> で収集本体を強制終了 → Windows が「予期せぬ終了。10 秒以内にサービスの再開」を記録 → 06:59:20.789 に新しい開始。<strong>停止のイベントは無い</strong>（強制終了なので書けない）。06:59 の行のあとに止まり、07:00 の行から続いて、<strong>行の欠けは 0 件</strong>。強制終了のあとも <code>integrity_check</code> は <code>ok</code>。検知も 07:00 で正常）。<strong>残り: OS の再起動後に自動で起動するか・サービスを止めたときに、検知が異常とトーストを出すか</strong>）</td></tr>
 <tr><td class="num">12</td><td><strong>実環境で確かめる（バックアップ）</strong>。実際の 23:59 に zip ができ、翌日以降も世代が増え、100 を超えたら古い世代が消えること。<strong>待ち時間が要る</strong></td><td class="nowrap"><span class="badge b-warn">着手</span>（✅ 初回の 10-06 23:59:00 に <code>pc-memory-20261006.zip</code>（3,469 byte）ができ、バックアップのイベントが残った。<strong>残り: 翌日以降に世代が増えること・100 世代を超えたら古い世代が消えること</strong>）</td></tr>
 <tr><td class="num">13</td><td>実測した待機メモリ・DB のサイズ・全プロセスの見え方を記録し、計画・課題へ反映する</td><td class="nowrap"><span class="badge b-warn">着手</span>（10-07 の実測。<strong>待機メモリ</strong>: 収集本体が WS 8.3 MB・プライベート 1.8 MB、winsw のラッパーが WS 26 MB（受信箱とファイル監視を足したあとも、ほぼ変わらない）。<strong>全プロセスの見え方</strong>: コマンドラインが読めなかった数は、非管理者 272/567・管理者のコンソール 257/570・<strong>サービス（LocalSystem）21/565</strong>。メモリ・CPU が NULL になった数は、約 260・75・1。<strong>残り: DB のサイズの伸び（数日分）</strong>）</td></tr>
 <tr><td class="num">14</td><td><strong>命名と日時の形式を直す</strong>（上の「命名と日時の決まり」）。<strong>手順 11 の前に行う</strong>（導入のあとは、DB の版 1 を書き換えられない）。先にテストを書き（日時が 23 文字の JST で書かれる・読まれる、列名、主キーと外部キーの名前、索引名）、落ちるのを確かめてから、<code>001-initial.sql</code>・<code>db.rs</code>・<code>migrate.rs</code>・<code>backup.rs</code>・<code>check-pc-memory-collector.ts</code>・テストを直す。DB はまだ無いので、移行は要らない。<strong>あわせて、<code>process_snapshot.is_admin</code> を足す</strong>（昇格した権限で書いたか。テストは、昇格の判定を差し替えられる形にして、0 と 1 が書かれることを確かめる）。開始イベントのメッセージにも「昇格あり／なし」を書く</td><td class="nowrap"><span class="badge b-warn">着手</span>（実装とテストは済。全件が通る。<strong>非管理者の実機</strong>で、23 文字の JST・列名・索引名・<code>is_admin = 0</code>・開始イベントの「管理者権限なし」を確認。<strong>管理者・サービスで <code>is_admin = 1</code> になることは、導入のときに確かめる</strong>）</td></tr>
 <tr><td class="num">15</td><td><strong>依頼の受信箱</strong>（上の「依頼の受信箱」）。先にテストを書く（受け取る・<code>proc/</code> → <code>comp/</code>・不正な依頼が <code>error/</code> へ理由つきで移る・<code>.tmp</code> を読まない・起動時に残った依頼を回収・通知で待ちが起きる・件数の上限・終了コード 75）。<code>notify</code> の追加と、待ちの置き替え</td><td class="nowrap"><span class="badge b-ok">済</span>（先にテストを書き、落ちるのを確認してから実装した。受信箱の処理・監視の通知・実際の exe での「依頼 → 終了コード 75 → 次の起動で完了」まで、<code>cargo test</code> で通る。新しいクレートは <code>notify</code> と <code>serde_json</code>。実際のサービスでの確認は手順 17）</td></tr>
 <tr><td class="num">16</td><td><code>tools/80_ops/request-restart.ts</code> と、<code>build-pc-memory-collector -Restart</code>。テストを先に書く（<code>.tmp</code> → 名前変更・完了と失敗の待ち・時間切れ）。計画書の置き替え手順（手順 2）と、ローカルルールの節を、この流れに書き直す</td><td class="nowrap"><span class="badge b-ok">済</span>（道具・<code>-Restart</code>・テスト・計画書の置き替え手順の書き直し。<strong>ローカルルール（10-07）</strong>: 節 3 を受信箱の流れに書き直し、節 4（DB に資格情報が入りうる例外）・節 5（サービスの置き場）・節 2 への「セッションの開始時」の確認を追加）</td></tr>
 <tr><td class="num">17</td><td><strong>実環境で確かめる</strong>。実際のサービスに再起動を依頼し、新しい exe に切り替わる（<code>comp/</code> に新しい版）・行の欠けが 1〜2 件に収まる・不正な依頼が <code>error/</code> に出る・待機時のメモリが増えすぎない</td><td class="nowrap"><span class="badge b-ok">済</span>（10-07 00:06 に、<strong>一般ユーザーで</strong>再起動を依頼し、約 11 秒（winsw の待ち 10 秒を含む）で <code>comp/</code> に完了が出た。<code>note</code> も残る。区切りをまたがなかったので、行の欠けは 0 件。00:14 に、知らない動作の依頼を置くと、約 2 秒で <code>error/</code> に理由つきで移った。待機メモリは、上の手順 13 のとおり増えていない）</td></tr>
+<tr><td class="num">18</td><td><strong>版 2: システム全体の内訳を足す</strong>（上の「版 2」。課題 i261007-01 の 2-A）。先にテストを書く（新しい列・版 1 の DB から版 2 へ上がり、行が失われず、控えの zip ができる・ページファイルの使用量が読める・カーネルのプールが書かれる）。<strong>本番の DB を、初めて版 2 に上げる</strong>ので、実機で、控えの zip・行の保持・新しい列の値を確かめる</td><td class="nowrap"><span class="badge b-ok">済</span>（10-07。先にテストを書き、❌Red（7 件失敗）を確認してから実装し、✅Green。全件成功。<strong>本番の DB を版 2 に上げた</strong>: 15:37:58 に <code>pre-ver-000001-20261007153758.zip</code>（控え）ができ、行は 978 件のまま、15:38 の行から新しい 5 列に値が入った（過去の行は NULL）。実測: <code>pagefile_used</code> 1.7 GB・<code>pagefile_peak</code> 9.7 GB・<code>kernel_paged</code> 1.7 GB・<code>kernel_nonpaged</code> 1.6 GB・<code>system_cache</code> 4.6 GB。<strong>カーネルのプールは、約 3 GB で、コミットの急増の原因ではない</strong>）</td></tr>
+<tr><td class="num">19</td><td><strong>依頼 <code>inspect</code>（プロセスの状態の調査）</strong>（上の「依頼 <code>inspect</code>」。10-07 に 1-A・2-A・3-A で承認）。先にテストを書く（上位 N 件・並び順・範囲外の <code>top</code>/<code>sort</code> が <code>error/</code>・コマンドラインを結果に含めない・システム全体の値・プロセスは終了しない）。<code>tools/80_ops/request-inspect.ts</code> を足す</td><td class="nowrap"><span class="badge b-none">未</span>（承認済み。版 2 のあとに着手）</td></tr>
 </tbody>
 </table></div>
 <div class="callout callout-important">

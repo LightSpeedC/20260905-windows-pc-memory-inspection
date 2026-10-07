@@ -108,24 +108,16 @@ WS合計・コミット合計も同じ px/MB の目盛りに揃えて赤バー�
 
 <section>
 <h1>サービスの exe の置き替え</h1>
-<p>共通ルールには、動いているサービスの exe を置き替える決まりが無いため、このプロジェクトだけの決めごととして書く。</p>
+<p>考え方（実行中の exe は、名前を変えて退避してから置く。切り替えはサービスの再起動。管理者なしの再起動は、依頼のファイルで受ける）は、共通ルール「常駐サービスの置き場と、exe の置き替え（Windows）」に従う。<strong>ここには、このプロジェクトの具体的なコマンドと値だけ</strong>を書く。</p>
 
 <ol>
-<li><strong><code>tools\20_build\build-pc-memory-collector.cmd -Restart</code></strong> で、ビルド → 置き替え → 再起動の依頼までを行う。管理者は要らない。
-<ul>
-<li>動いている exe は、削除も上書きもできないが、<strong>名前を変えて <code>tmp/</code> へ退避することはできる</strong>（<code>Set-ExeFile</code>）。サービスは止めない。</li>
-<li>再起動は、<strong>受信箱（<code>_data/request/inbox</code>）に依頼のファイルを置いて</strong>行う。サービスが受け取り、終了コード 75 で終わり、winsw が新しい exe で起動し直す。</li>
-</ul></li>
+<li><strong><code>tools\20_build\build-pc-memory-collector.cmd -Restart</code></strong> で、ビルド → 退避して置き替え → 再起動の依頼までを行う（管理者は要らない）。退避先は <code>tmp/</code>、受信箱は <code>_data/request/inbox</code>。</li>
 <li>結果は、<code>_data/request/comp/</code>（完了。新しい版が書かれる）か <code>error/</code>（失敗。理由が書かれる）に出る。再起動の間（約 10 秒）は、収集が止まる。毎分の区切りの直後に行うと、行が欠けない。</li>
 <li>ビルドせずに再起動だけ頼むときは、<code>tools\80_ops\request-restart.cmd</code>。</li>
 <li><strong>受信箱を持たない古い版</strong>が動いているときだけ、管理者で <code>deploy\rust-ai-pc-memory-collector-winsw.exe restart</code> する。</li>
 </ol>
 
-<p><code>install-pc-memory-collector-service.cmd</code> は、定義や winsw を変えたときの<strong>登録の作り直し用</strong>。exe だけを替えるときは使わない。</p>
-
-<div class="callout">
-<strong>理由:</strong> 導入スクリプトで入れ直すと、毎回、停止・削除・再登録が走り、管理者の操作が増える。受信箱の依頼なら、管理者なしで、結果（完了・失敗・時間切れ）まで確かめられる。
-</div>
+<p><code>install-pc-memory-collector-service.cmd</code> は、定義や winsw を変えたときの<strong>登録の作り直し用</strong>。exe だけを替えるときは使わない（毎回、停止・削除・再登録が走り、管理者の操作が増える）。</p>
 </section>
 
 <section>
@@ -145,12 +137,12 @@ WS合計・コミット合計も同じ px/MB の目盛りに揃えて赤バー�
 
 <section>
 <h1>サービスの置き場</h1>
-<p>共通ルールの「デプロイ定義」の置き場（<code>deploy/</code>）を使う。このプロジェクトだけの決めごとを、次に書く。</p>
+<p>共通ルール「常駐サービスの置き場と、exe の置き替え（Windows）」に従う。<strong>このプロジェクトの値</strong>だけを、次に書く。</p>
 
 <ul>
-<li><strong>定義の XML は <code>deploy/</code>（Git 管理）。exe（ビルドした本体・winsw の複製）とログは、同じ <code>deploy/</code> に置くが、Git に入れない</strong>（<code>.gitignore</code>）。ビルド出力は、Rust の既定の <code>target/</code>。</li>
-<li><strong>導入は、一般ユーザーのコマンドプロンプトから行う</strong>（<code>tools\70_deploy\install-pc-memory-collector-service.cmd</code>）。自動で管理者へ昇格し、パスも実体へ直して渡す。<strong>管理者のコンソールを直接開いて実行すると、<code>T:</code> や <code>W:</code> が見えず、winsw の複製元を見失う。</strong></li>
-<li><strong>サービスに登録するパスは、実体のパス（subst のドライブではない）</strong>。subst はログオンセッションごとに閉じていて、OS の再起動後に、サービスが起動できなくなる。導入の最後に表示される「登録された実行ファイル」が、<code>C:\</code> で始まっていることを見る。</li>
+<li><strong>置き場</strong>: 定義は <code>deploy/rust-ai-pc-memory-collector-winsw.xml</code>（Git 管理）。exe（本体と winsw の複製）は <code>deploy/*.exe</code>（<code>.gitignore</code> で除外）、ログは <code>deploy/logs/</code>。ビルド出力は <code>src/pc-memory-collector/target/</code>。</li>
+<li><strong>導入</strong>: 一般ユーザーのコマンドプロンプトから <code>tools\70_deploy\install-pc-memory-collector-service.cmd</code>。自動で管理者へ昇格する。管理者のコンソールを直接開くと、<code>T:</code> や <code>W:</code> が見えず、winsw の複製元（<code>T:/ai-chat-lite/</code> の winsw）を見失う。</li>
+<li><strong>導入の最後に表示される「登録された実行ファイル」が、<code>C:\</code> で始まっていること</strong>を見る（subst のドライブでないこと）。</li>
 </ul>
 </section>
 
