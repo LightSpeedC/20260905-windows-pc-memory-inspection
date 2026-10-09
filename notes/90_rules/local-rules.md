@@ -1,6 +1,6 @@
 # ローカルルール
 
-📅 作成: 2026-09-21 / 更新: 2026-10-07
+📅 作成: 2026-09-21 / 更新: 2026-10-10
 
 ## 1. 結論と所見（ch06）の視覚化
 
@@ -50,7 +50,7 @@ cron とは別に、**セッションを開いたら、`logs/check-report.log`�
 - **見分け方**: 一般ユーザーからは、このタスクの状態を読めない（管理者が登録している）。タスクスケジューラの GUI で、「条件」タブを見る。
 
 > [!NOTE]
-> **cron はセッションの中だけで生きる（共通ルール参照）。** このセッションを閉じると消え、7日で自動失効する。継続するかは利用者が都度決める。
+> **このプロジェクトで張る cron は、上の `15 0,6,12,18 * * *` だけ。** 作り直しは共通ルール「cron はセッションの中だけで生きる」に従う。
 
 ## 3. サービスの exe の置き替え
 
@@ -79,6 +79,5 @@ cron とは別に、**セッションを開いたら、`logs/check-report.log`�
 
 共通ルール「常駐サービスの置き場と、exe の置き替え（Windows）」に従う。**このプロジェクトの値**だけを、次に書く。
 
-- **置き場**: 定義は `deploy/rust-ai-pc-memory-collector-winsw.xml`（Git 管理）。exe（本体と winsw の複製）は `deploy/*.exe`（`.gitignore` で除外）、ログは `deploy/logs/`。ビルド出力は `src/pc-memory-collector/target/`。
-- **導入**: 一般ユーザーのコマンドプロンプトから `tools\70_deploy\install-pc-memory-collector-service.cmd`。自動で管理者へ昇格する。管理者のコンソールを直接開くと、`T:` や `W:` が見えず、winsw の複製元（`T:/ai-chat-lite/` の winsw）を見失う。
-- **導入の最後に表示される「登録された実行ファイル」が、`C:\` で始まっていること**を見る（subst のドライブでないこと）。
+- **置き場**: 定義は `deploy/rust-ai-pc-memory-collector-winsw.xml`（Git 管理）。exe（本体と winsw の複製）は `deploy/*.exe`（`.gitignore` で除外）。ログは `logs/pc-memory-collector/`。ビルド出力は `src/pc-memory-collector/target/`。
+- **導入**: 一般ユーザーのコマンドプロンプトから `tools\70_deploy\install-pc-memory-collector-service.cmd`。自動で管理者へ昇格する。管理者のコンソールを直接開くと、winsw の複製元（`T:/ai-chat-lite/` の winsw）を見失う。

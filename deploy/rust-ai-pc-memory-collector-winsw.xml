@@ -21,8 +21,9 @@
     logpath の相対パスは「サービスのカレントディレクトリ」を基準に解決され、C:\Windows\System32 になってしまう。
     %BASE% は WinSW の実行ファイルがあるフォルダを指すため、これを前に付ける。
     標準出力・標準エラーがここへ回る。収集の経過（スナップショット・バックアップ・エラー）は日時（JST）付きで出る。
+    置き場は、プロジェクトのルートの logs/ の下（サービス名のフォルダ）。レポートや確認ログと同じ logs/ に集め、混ざらないよう分ける。
   -->
-  <logpath>%BASE%\logs</logpath>
+  <logpath>%BASE%\..\logs\pc-memory-collector</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>10240</sizeThreshold>
     <keepFiles>8</keepFiles>

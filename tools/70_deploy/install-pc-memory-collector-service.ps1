@@ -155,7 +155,7 @@ try {
 	# 登録された実行ファイルのパスが、実体のパスであること（subst のドライブだと、OS の再起動後に起動できない）を目で確かめる
 	$imagePath = (Get-CimInstance -ClassName Win32_Service -Filter ("Name='" + $ServiceId + "'")).PathName
 	Write-Host ('登録された実行ファイル: ' + $imagePath)
-	Write-Host 'DB: _data/pc-memory.db / バックアップ: _backup/ / ログ: deploy/logs/'
+	Write-Host 'DB: _data/pc-memory.db / バックアップ: _backup/ / ログ: logs/pc-memory-collector/'
 	Complete-Script 0
 } catch {
 	Write-Host ('失敗しました: ' + $_.Exception.Message) -ForegroundColor Red
